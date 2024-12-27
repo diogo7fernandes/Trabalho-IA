@@ -1,7 +1,7 @@
 import sys
 sys.path.append(".")  # Adiciona o diretório atual ao PYTHONPATH
 from grafo import Grafo
-
+import random
 
 
 
@@ -9,22 +9,37 @@ def main():
 
 	g = Grafo()
 	
-	#lat, longitude
-	g.adicionar_nodo("Centro", {"coordenadas": (41.4679, -8.4120), "prioridade":0, "acessibilidade":0, "clima":0, "alimentos":0})
-	g.adicionar_nodo("Braga", {"coordenadas": (41.5503, -8.4201), "prioridade":1, "acessibilidade":1, "clima":1, "alimentos":0})
-	g.adicionar_nodo("Esposende", {"coordenadas": (41.5320, -8.7832), "prioridade":2, "acessibilidade":2, "clima":2, "alimentos":0})
-	g.adicionar_nodo("Barcelos", {"coordenadas": (41.5388, -8.6151), "prioridade":3, "acessibilidade":3, "clima":3, "alimentos":0})
-	g.adicionar_nodo("Vila Nova de Famalicão", {"coordenadas": (41.4091, -8.5198), "prioridade":3, "acessibilidade":1, "clima":3, "alimentos":0})
-	g.adicionar_nodo("Guimarães", {"coordenadas": (41.4444, -8.2962), "prioridade":5, "acessibilidade":1, "clima":4, "alimentos":0})
-	g.adicionar_nodo("Vizela", {"coordenadas": (41.3890, -8.2926), "prioridade":5, "acessibilidade":10, "clima":2, "alimentos":0})
-	g.adicionar_nodo("Fafe", {"coordenadas": (41.4541, -8.1706), "prioridade":1, "acessibilidade":0, "clima":2, "alimentos":0})
-	g.adicionar_nodo("Póvoa de Lanhoso", {"coordenadas": (41.5769, -8.2697), "prioridade":1, "acessibilidade":10, "clima":2, "alimentos":0})
-	g.adicionar_nodo("Amares", {"coordenadas": (41.6308, -8.3514), "prioridade":1, "acessibilidade":5, "clima":6, "alimentos":0})
-	g.adicionar_nodo("Vila Verde", {"coordenadas": (41.6480, -8.4367), "prioridade":1, "acessibilidade":2, "clima":5, "alimentos":0})
-	g.adicionar_nodo("Terras de Bouro", {"coordenadas": (41.7323, -8.3088), "prioridade":8, "acessibilidade":2, "clima":6, "alimentos":0})
-	g.adicionar_nodo("Vieira do Minho", {"coordenadas": (41.6325, -8.1461), "prioridade":4, "acessibilidade":7, "clima":4, "alimentos":0})
-	g.adicionar_nodo("Celourico de Basto", {"coordenadas": (41.3899, -8.0058), "prioridade":5, "acessibilidade":5, "clima":7, "alimentos":0})
-	g.adicionar_nodo("Cabeceiras de Basto", {"coordenadas": (41.5151, -7.9889), "prioridade":5, "acessibilidade":5, "clima":6, "alimentos":0})
+
+
+# Função para gerar valores aleatórios
+	def gerar_atributos_aleatorios():
+		return {
+			"prioridade": random.randint(0, 10),  # Valores de 0 a 10
+			"acessibilidade": random.randint(0, 10),  # Valores de 0 a 10
+			"clima": random.randint(0, 10),  # Valores de 0 a 10
+			"alimentos": random.randint(0, 100),  # Quantidade de alimentos necessarios na loc de 0 a 100
+			"reabastecimento": random.choice([True, False]),  # Verdadeiro ou falso
+			"supply_refill": random.choice([True, False])
+
+		}
+
+	# Adicionando os nós com valores aleatórios
+	g.adicionar_nodo("Centro", {"coordenadas": (41.4679, -8.4120), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Braga", {"coordenadas": (41.5503, -8.4201), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Esposende", {"coordenadas": (41.5320, -8.7832), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Barcelos", {"coordenadas": (41.5388, -8.6151), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Vila Nova de Famalicão", {"coordenadas": (41.4091, -8.5198), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Guimarães", {"coordenadas": (41.4444, -8.2962), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Vizela", {"coordenadas": (41.3890, -8.2926), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Fafe", {"coordenadas": (41.4541, -8.1706), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Póvoa de Lanhoso", {"coordenadas": (41.5769, -8.2697), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Amares", {"coordenadas": (41.6308, -8.3514), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Vila Verde", {"coordenadas": (41.6480, -8.4367), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Terras de Bouro", {"coordenadas": (41.7323, -8.3088), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Vieira do Minho", {"coordenadas": (41.6325, -8.1461), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Celourico de Basto", {"coordenadas": (41.3899, -8.0058), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Cabeceiras de Basto", {"coordenadas": (41.5151, -7.9889), **gerar_atributos_aleatorios()})
+
 
 	g.adicionar_aresta("Esposende", "Barcelos")
 	g.adicionar_aresta("Barcelos", "Esposende")
@@ -134,7 +149,7 @@ def main():
 		elif saida == 2:
 			g.desenha()
 		elif saida == 3:
-			print(g.m_grafo.keys())
+			print(g.imprimir_stats_nodos())
 			l = input("prima enter para continuar")
 		elif saida == 4:
 			origem ="Esposende"

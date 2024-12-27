@@ -2,6 +2,8 @@ import sys
 
 sys.path.append(".")
 import math
+import os
+import json
 import transporte as tr
 import heapq
 import networkx as nx  # biblioteca de tratamento de grafos necessária para desnhar graficamente o grafo
@@ -356,3 +358,9 @@ class Grafo:
 
 
 
+	def imprimir_stats_nodos(self, filename="stats_nodos.json"):
+        
+		with open(filename, "w") as file:
+			json.dump(self.m_nodos, file, indent=4)
+		print(f"Estatísticas dos nós foram salvas em '{filename}'")
+		os.startfile(filename)
