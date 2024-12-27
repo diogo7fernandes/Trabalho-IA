@@ -1,5 +1,5 @@
 import sys
-
+from transporte import Carro, Moto, Helicoptero, Drone
 sys.path.append(".")
 import math
 import os
@@ -121,9 +121,7 @@ class Grafo:
 		)
 		plt.show()
 
-	def atualizar_atributos(
-		self, nodo, prioridade, clima=None, acessibilidade=None, alimentos=None
-	):
+	def atualizar_atributos(self, nodo, prioridade, clima=None, acessibilidade=None, alimentos=None):
 
 		if nodo not in self.m_nodos:
 			raise ValueError(f"Localidade '{nodo}' não existe no grafo.")
@@ -139,6 +137,20 @@ class Grafo:
 			self.m_nodos[nodo]["alimentos"] = alimentos
 
 		import heapq  # Biblioteca para usar a fila de prioridade
+
+	@staticmethod
+	def escolher_transporte(acessibilidade):
+
+		if 0 <= acessibilidade <= 2:
+			return Carro()
+		elif 3 <= acessibilidade <= 5:
+			return Moto()
+		elif 6 <= acessibilidade <= 8:
+			return Helicoptero()
+		elif 9 <= acessibilidade <= 10:
+			return Drone()
+		return None
+
 
 	def imprimir_distancia(self, origem, destino):
 
@@ -252,85 +264,146 @@ class Grafo:
 	
 	
 	def procura_BFS(self, inicio):
-	
+    
 		if inicio not in self.m_nodos:
 			raise ValueError(f"Nó '{inicio}' não existe no grafo.")
-		
-		visitados = set()  # Conjunto de nós visitados
-		fila = [inicio]  # Fila para a BFS
-		ordem_visita = []  # Lista para registrar a ordem de visita dos nós
 
-		while fila:
-			atual = fila.pop(0)  # Retira o primeiro elemento da fila
+		from transporte import Carro, Moto, Helicoptero, Drone
 
-			if atual not in visitados:
-				visitados.add(atual)  # Marca o nó como visitado
-				ordem_visita.append(atual)  # Adiciona à ordem de visita
+		transportes = [Carro(), Moto(), Helicoptero(), Drone()]
+		resultados = []
 
-			# Adiciona os vizinhos a fila na ordem inversa para manter a logica DFS
-			for vizinho, _ in reversed(self.m_grafo.get(atual, [])):
-				if vizinho not in visitados:
-					fila.append(vizinho)
+		for transporte in transportes:
+			visitados = set()
+			caminho = []
+			fila = [(inicio, 0)]  # Fila com (nó, custo acumulado)
 
-		return ordem_visita
+			custo_total = 0
+			tempo_total = 0
+
+			while fila:
+				atual, custo_atual = fila.pop(0)
+
+				if atual not in visitados:
+					visitados.add(atual)
+					caminho.append(atual)
+
+					# Calcular tempo de viagem para o nó
+					for vizinho, peso in self.m_grafo.get(atual, []):
+						if vizinho not in visitados:
+							if transporte.autonomia >= peso:  # Verifica se o transporte pode alcançar o próximo nó
+								fila.append((vizinho, custo_atual + peso))
+								transporte.autonomia -= peso
+								tempo_total += peso / transporte.velocidade
+							else:
+								print(f"Autonomia insuficiente para {transporte.nome} alcançar {vizinho}. Reabastecimento necessário.")
+								transporte.abastecer()
+
+					custo_total = custo_atual
+
+			resultados.append((transporte.nome, caminho, custo_total, tempo_total))
+
+		# Output organizado
+		for transporte_nome, caminho, custo, tempo in resultados:
+			print(f"\n--- Resultados para {transporte_nome} ---")
+			print(f"Caminho: {caminho}")
+			print(f"Custo Total: {custo}")
+			print(f"Tempo Total: {tempo:.2f} horas")
+
 
 	
 	def procura_DFS(self, inicio):
-	
+    
 		if inicio not in self.m_nodos:
 			raise ValueError(f"Nó '{inicio}' não existe no grafo.")
 
-		visitados = set()  # Conjunto de nós visitados
-		pilha = [inicio]  # Pilha para a DFS
-		ordem_visita = []  # Lista para registar a ordem de visita dos nós
+		from transporte import Carro, Moto, Helicoptero, Drone
 
-		while pilha:
-			atual = pilha.pop()  # Retira o último elemento da pilha
+		transportes = [Carro(), Moto(), Helicoptero(), Drone()]
+		resultados = []
 
-			if atual not in visitados:
-				visitados.add(atual)  # Marca o nó como visitado
-				ordem_visita.append(atual)  # Adiciona à ordem de visita
+		for transporte in transportes:
+			visitados = set()
+			caminho = []
+			pilha = [(inicio, 0)]  # Pilha com (nó, custo acumulado)
 
-			# Adiciona os vizinhos do nó atual à pilha (inverso da ordem para manter DFS)
-			for vizinho, _ in reversed(self.m_grafo.get(atual, [])):
-				if vizinho not in visitados:
-					pilha.append(vizinho)
+			custo_total = 0
+			tempo_total = 0
 
-		return ordem_visita
-	
+			while pilha:
+				atual, custo_atual = pilha.pop()
+
+				if atual not in visitados:
+					visitados.add(atual)
+					caminho.append(atual)
+
+					# Calcular tempo de viagem para o nó
+					for vizinho, peso in self.m_grafo.get(atual, []):
+						if vizinho not in visitados:
+							if transporte.autonomia >= peso:  # Verifica se o transporte pode alcançar o próximo nó
+								pilha.append((vizinho, custo_atual + peso))
+								transporte.autonomia -= peso
+								tempo_total += peso / transporte.velocidade
+							else:
+								print(f"Autonomia insuficiente para {transporte.nome} alcançar {vizinho}. Reabastecimento necessário.")
+								transporte.abastecer()
+
+					custo_total = custo_atual
+
+			resultados.append((transporte.nome, caminho, custo_total, tempo_total))
+
+		# Output organizado
+		for transporte_nome, caminho, custo, tempo in resultados:
+			print(f"\n--- Resultados para {transporte_nome} ---")
+			print(f"Caminho: {caminho}")
+			print(f"Custo Total: {custo}")
+			print(f"Tempo Total: {tempo:.2f} horas")
+
+
 
 	def a_star(self, inicio, objetivo):
-	
+    
 		if inicio not in self.m_nodos or objetivo not in self.m_nodos:
 			raise ValueError("Nó inicial ou objetivo não existe no grafo.")
 
-		# Inicializar a fila de prioridade
-		fila_prioridade = []
-		heapq.heappush(fila_prioridade, (0, inicio, [inicio]))  # (f(n), nó atual, caminho percorrido)
+		from transporte import Carro, Moto, Helicoptero, Drone
 
-		# Custos acumulados para chegar a cada nó
-		custos = {inicio: 0}
+		transportes = [Carro(), Moto(), Helicoptero(), Drone()]
+		resultados = []
 
-		while fila_prioridade:
-			f_atual, atual, caminho = heapq.heappop(fila_prioridade)
+		for transporte in transportes:
+			fila_prioridade = []
+			heapq.heappush(fila_prioridade, (0, inicio, [inicio]))
+			custos = {inicio: 0}
+			tempo_total = 0
 
-			# Se alcançamos o objetivo, retornamos o caminho e o custo
-			if atual == objetivo:
-				return caminho, custos[atual]
+			while fila_prioridade:
+				f_atual, atual, caminho = heapq.heappop(fila_prioridade)
 
-			# Expandir os vizinhos do nó atual
-			for vizinho, peso in self.m_grafo.get(atual, []):
-				g_custo = custos[atual] + peso
-				h_custo = self.calcular_heuristica(vizinho, objetivo)
-				f_custo = g_custo + h_custo
+				if atual == objetivo:
+					custo_total = custos[atual]
+					resultados.append((transporte.nome, caminho, custo_total, tempo_total))
+					break
 
-				# Se encontramos um caminho melhor para o vizinho, atualizamos
-				if vizinho not in custos or g_custo < custos[vizinho]:
-					custos[vizinho] = g_custo
-					heapq.heappush(fila_prioridade, (f_custo, vizinho, caminho + [vizinho]))
+				for vizinho, peso in self.m_grafo.get(atual, []):
+					if transporte.autonomia >= peso:  # Verifica se o transporte pode alcançar o próximo nó
+						g_custo = custos[atual] + peso
+						h_custo = self.calcular_heuristica(vizinho, objetivo)
+						f_custo = g_custo + h_custo
+						heapq.heappush(fila_prioridade, (f_custo, vizinho, caminho + [vizinho]))
+						transporte.autonomia -= peso
+						tempo_total += peso / transporte.velocidade
+					else:
+						print(f"Autonomia insuficiente para {transporte.nome} alcançar {vizinho}. Reabastecimento necessário.")
+						transporte.abastecer()
 
-		# Se nenhum caminho for encontrado
-		return None, float('inf')
+		# Output organizado
+		for transporte_nome, caminho, custo, tempo in resultados:
+			print(f"\n--- Resultados para {transporte_nome} ---")
+			print(f"Caminho: {caminho}")
+			print(f"Custo Total: {custo}")
+			print(f"Tempo Total: {tempo:.2f} horas")
+
 
 
 	def calcular_heuristica(self, nodo, objetivo):

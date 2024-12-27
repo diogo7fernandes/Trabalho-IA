@@ -16,6 +16,7 @@ def main():
 		return {
 			"prioridade": random.randint(0, 10),  # Valores de 0 a 10
 			"acessibilidade": random.randint(0, 10),  # Valores de 0 a 10
+			#valores de acessibilidade para carros:0-2, mota:3-5, helicoptero:6-8, drone:9-10
 			"clima": random.randint(0, 10),  # Valores de 0 a 10
 			"alimentos": random.randint(0, 100),  # Quantidade de alimentos necessarios na loc de 0 a 100
 			"reabastecimento": random.choice([True, False]),  # Verdadeiro ou falso
@@ -159,31 +160,26 @@ def main():
 		elif saida == 5:
 			inicio = "Centro"
 			try:
-				ordem_visita = g.procura_DFS(inicio) 
-				print(f"Ordem dos nós visitados (DFS): {ordem_visita}")
+				g.procura_DFS(inicio)
 			except ValueError as e:
 				print(e)
 			input("Pressione Enter para continuar...")
 		elif saida == 6:
 			inicio = "Centro"
 			try:
-				ordem_visita = g.procura_BFS(inicio)
-				print(f"Ordem dos nós visitados (BFS): {ordem_visita}")
+				g.procura_BFS(inicio)
 			except ValueError as e:
 				print(e)
-			input("Pressione Enter para continuar...")       
+			input("Pressione Enter para continuar...")
+
 		elif saida == 7:
 			inicio = input("Digite o nó inicial: ")
 			objetivo = input("Digite o nó objetivo: ")
 			try:
-				caminho, custo = g.a_star(inicio, objetivo)
-				if caminho:
-					print(f"Caminho encontrado: {caminho}")
-					print(f"Custo total: {custo:.2f}")
-				else:
-					print("Nenhum caminho encontrado.")
+				g.a_star(inicio, objetivo)
 			except ValueError as e:
 				print(e)
+			input("Pressione Enter para continuar...")
 		elif saida == 8:
 			print(g.custo_uniforme())
 			l = input("prima enter para continuar")
