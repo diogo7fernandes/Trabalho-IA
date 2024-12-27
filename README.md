@@ -1,0 +1,2 @@
+# Trabalho-IA
+minancia
