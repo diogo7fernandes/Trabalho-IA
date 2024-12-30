@@ -167,65 +167,76 @@ class Grafo:
 			f"A distância entre {origem} e {destino} é aproximadamente {distancia:.2f} km."
 		)
 	
-	
 	def procura_BFS(self, inicio):
+		"""
+		Executa o algoritmo BFS e retorna o caminho e custo total.
+		"""
 		if inicio not in self.m_nodos:
 			raise ValueError(f"Nó '{inicio}' não existe no grafo.")
 
-		from transporte import Carro, Moto, Helicoptero, Drone
+		visitados = set()
+		caminho = []
+		fila = [(inicio, 0)]  # Fila com (nó, custo acumulado)
 
-		transportes = [Carro(), Moto(), Helicoptero(), Drone()]
-		resultados = []
+		custo_total = 0
 
-		for transporte in transportes:
-			visitados = set()
-			caminho = []
-			fila = [(inicio, 0)]  # Fila com (nó, custo acumulado)
+		while fila:
+			atual, custo_atual = fila.pop(0)
 
-			custo_total = 0
-			tempo_total = 0
+			if atual not in visitados:
+				visitados.add(atual)
+				caminho.append(atual)
 
-			while fila:
-				atual, custo_atual = fila.pop(0)
-
-				if atual not in visitados:
-					visitados.add(atual)
-					caminho.append(atual)
-
-					# Calcular tempo de viagem para o nó
-					for vizinho, peso in self.m_grafo.get(atual, []):
+				for vizinho, peso in self.m_grafo.get(atual, []):
+					if vizinho not in visitados:
 						distancia = self.calcular_distancia(atual, vizinho)
+						fila.append((vizinho, custo_atual + distancia))
 
-						if vizinho not in visitados:
-							if transporte.autonomia >= distancia:
-								fila.append((vizinho, custo_atual + distancia))
-								transporte.autonomia -= distancia
-								tempo_total += distancia / transporte.velocidade
-							else:
-								print(f"Autonomia insuficiente para {transporte.nome} alcançar {vizinho}. Reabastecimento necessário.")
-								transporte.abastecer()
+				# Atualizar o custo total com o custo acumulado
+				custo_total = max(custo_total, custo_atual)
 
-					# Atualizar o custo total com o custo acumulado atual
-					custo_total = max(custo_total, custo_atual)
+		print(f" {caminho} ")
+		return caminho
+		
+	
+	def simular_transporte(self, caminho, transporte):
+		"""
+		Simula o transporte percorrendo o caminho.
+		"""
+		tempo_total = 0
+		autonomia_inicial = transporte.autonomia
 
-			resultados.append((transporte.nome, caminho, custo_total, tempo_total))
+		for i in range(len(caminho) - 1):
+			atual = caminho[i]
+			proximo = caminho[i + 1]
+			distancia = self.calcular_distancia(atual, proximo)
 
-		# Output organizado
-		for transporte_nome, caminho, custo, tempo in resultados:
-			print(f"\n--- Resultados para {transporte_nome} ---")
-			print(f"Caminho: {caminho}")
-			print(f"Custo Total: {custo}")
-			print(f"Tempo Total: {tempo:.2f} horas")
+			print(f"Transporte {transporte.nome} está viajando de '{atual}' para '{proximo}'.")
 
+			if transporte.autonomia >= distancia:
+				tr.Transporte.viajar(transporte, distancia)
+				tempo_total += distancia / transporte.velocidade
+			else:
+				print(f"Autonomia insuficiente para {transporte.nome} alcançar '{proximo}'.")
+				atributos_atual = self.m_nodos[atual]
+				if atributos_atual.get("reabastecimento", False):
+					print(f"Reabastecendo transporte no nó '{atual}'.")
+					transporte.abastecer()
+				else:
+					print(f"Nó '{atual}' não permite reabastecimento. Transporte parado.")
+					break  # Transporte não pode continuar
+
+		print(f"\nTransporte {transporte.nome} completou a simulação.")
+		print(f"Tempo Total: {tempo_total:.2f} horas")
 
 
 	
+
+
 	def procura_DFS(self, inicio):
-    
+	
 		if inicio not in self.m_nodos:
 			raise ValueError(f"Nó '{inicio}' não existe no grafo.")
-
-		from transporte import Carro, Moto, Helicoptero, Drone
 
 		transportes = [Carro(), Moto(), Helicoptero(), Drone()]
 		resultados = []
@@ -266,6 +277,7 @@ class Grafo:
 			print(f"Caminho: {caminho}")
 			print(f"Custo Total: {custo}")
 			print(f"Tempo Total: {tempo:.2f} horas")
+			
 
 	def heuristica_grafo(self):
 		"""
@@ -372,7 +384,7 @@ class Grafo:
 
 
 	def imprimir_stats_nodos(self, filename="stats_nodos.json"):
-        
+		
 		with open(filename, "w") as file:
 			json.dump(self.m_nodos, file, indent=4)
 		print(f"Estatísticas dos nós foram salvas em '{filename}'")

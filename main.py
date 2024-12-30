@@ -2,7 +2,7 @@ import sys
 sys.path.append(".")  # Adiciona o diretório atual ao PYTHONPATH
 from grafo import Grafo
 import random
-
+from transporte import Carro, Moto, Helicoptero, Drone
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
 			#valores de acessibilidade para carros:0-2, mota:3-5, helicoptero:6-8, drone:9-10
 			"clima": random.randint(0, 10),  # Valores de 0 a 10
 			"alimentos": random.randint(0, 100),  # Quantidade de alimentos necessarios na loc de 0 a 100
-			"reabastecimento": random.choice([True, False]),  # Verdadeiro ou falso
+			"reabastecimento": random.choice([True, False]),  # Verdadeiro se der para rewabastecer
 			"supply_refill": random.choice([True, False])
 
 		}
@@ -166,8 +166,11 @@ def main():
 			input("Pressione Enter para continuar...")
 		elif saida == 6:
 			inicio = "Centro"
+			transportes = [Carro(), Moto(), Helicoptero(), Drone()]
 			try:
-				g.procura_BFS(inicio)
+				caminho = g.procura_BFS(inicio)
+				g.simular_transporte(caminho,Carro())
+				
 			except ValueError as e:
 				print(e)
 			input("Pressione Enter para continuar...")
