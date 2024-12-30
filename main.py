@@ -29,11 +29,11 @@ def main():
 	g.adicionar_nodo("Braga", {"coordenadas": (41.5503, -8.4201), **gerar_atributos_aleatorios()})
 	g.adicionar_nodo("Esposende", {"coordenadas": (41.5320, -8.7832), **gerar_atributos_aleatorios()})
 	g.adicionar_nodo("Barcelos", {"coordenadas": (41.5388, -8.6151), **gerar_atributos_aleatorios()})
-	g.adicionar_nodo("Vila Nova de Famalicão", {"coordenadas": (41.4091, -8.5198), **gerar_atributos_aleatorios()})
-	g.adicionar_nodo("Guimarães", {"coordenadas": (41.4444, -8.2962), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Vila Nova de Famalicao", {"coordenadas": (41.4091, -8.5198), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Guimaraes", {"coordenadas": (41.4444, -8.2962), **gerar_atributos_aleatorios()})
 	g.adicionar_nodo("Vizela", {"coordenadas": (41.3890, -8.2926), **gerar_atributos_aleatorios()})
 	g.adicionar_nodo("Fafe", {"coordenadas": (41.4541, -8.1706), **gerar_atributos_aleatorios()})
-	g.adicionar_nodo("Póvoa de Lanhoso", {"coordenadas": (41.5769, -8.2697), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Povoa de Lanhoso", {"coordenadas": (41.5769, -8.2697), **gerar_atributos_aleatorios()})
 	g.adicionar_nodo("Amares", {"coordenadas": (41.6308, -8.3514), **gerar_atributos_aleatorios()})
 	g.adicionar_nodo("Vila Verde", {"coordenadas": (41.6480, -8.4367), **gerar_atributos_aleatorios()})
 	g.adicionar_nodo("Terras de Bouro", {"coordenadas": (41.7323, -8.3088), **gerar_atributos_aleatorios()})
@@ -45,8 +45,8 @@ def main():
 	g.adicionar_aresta("Esposende", "Barcelos")
 	g.adicionar_aresta("Barcelos", "Esposende")
 
-	g.adicionar_aresta("Barcelos", "Vila Nova de Famalicão")
-	g.adicionar_aresta("Vila Nova de Famalicão", "Barcelos")
+	g.adicionar_aresta("Barcelos", "Vila Nova de Famalicao")
+	g.adicionar_aresta("Vila Nova de Famalicao", "Barcelos")
 
 	g.adicionar_aresta("Barcelos", "Vila Verde")
 	g.adicionar_aresta("Vila Verde", "Barcelos")
@@ -66,38 +66,38 @@ def main():
 	g.adicionar_aresta("Braga", "Centro")
 	g.adicionar_aresta("Centro", "Braga")
 
-	g.adicionar_aresta("Braga", "Vila Nova de Famalicão")
-	g.adicionar_aresta("Vila Nova de Famalicão", "Braga")
+	g.adicionar_aresta("Braga", "Vila Nova de Famalicao")
+	g.adicionar_aresta("Vila Nova de Famalicao", "Braga")
 
 	g.adicionar_aresta("Braga", "Amares")
 	g.adicionar_aresta("Amares", "Braga")
 
-	g.adicionar_aresta("Braga", "Guimarães")
-	g.adicionar_aresta("Guimarães", "Braga")
+	g.adicionar_aresta("Braga", "Guimaraes")
+	g.adicionar_aresta("Guimaraes", "Braga")
 
-	g.adicionar_aresta("Braga", "Póvoa de Lanhoso")
-	g.adicionar_aresta("Póvoa de Lanhoso", "Braga")
+	g.adicionar_aresta("Braga", "Povoa de Lanhoso")
+	g.adicionar_aresta("Povoa de Lanhoso", "Braga")
 
-	g.adicionar_aresta("Guimarães", "Vila Nova de Famalicão")
-	g.adicionar_aresta("Vila Nova de Famalicão", "Guimarães")
+	g.adicionar_aresta("Guimaraes", "Vila Nova de Famalicao")
+	g.adicionar_aresta("Vila Nova de Famalicao", "Guimaraes")
 
-	g.adicionar_aresta("Guimarães", "Vizela")
-	g.adicionar_aresta("Vizela", "Guimarães")
+	g.adicionar_aresta("Guimaraes", "Vizela")
+	g.adicionar_aresta("Vizela", "Guimaraes")
 
-	g.adicionar_aresta("Guimarães", "Fafe")
-	g.adicionar_aresta("Fafe", "Guimarães")
+	g.adicionar_aresta("Guimaraes", "Fafe")
+	g.adicionar_aresta("Fafe", "Guimaraes")
 
-	g.adicionar_aresta("Guimarães", "Póvoa de Lanhoso")
-	g.adicionar_aresta("Póvoa de Lanhoso", "Guimarães")
+	g.adicionar_aresta("Guimaraes", "Povoa de Lanhoso")
+	g.adicionar_aresta("Povoa de Lanhoso", "Guimaraes")
 
-	g.adicionar_aresta("Guimarães", "Centro")
-	g.adicionar_aresta("Centro", "Guimarães")
+	g.adicionar_aresta("Guimaraes", "Centro")
+	g.adicionar_aresta("Centro", "Guimaraes")
 
-	g.adicionar_aresta("Vila Nova de Famalicão", "Centro")
-	g.adicionar_aresta("Centro", "Vila Nova de Famalicão")
+	g.adicionar_aresta("Vila Nova de Famalicao", "Centro")
+	g.adicionar_aresta("Centro", "Vila Nova de Famalicao")
 
-	g.adicionar_aresta("Fafe", "Póvoa de Lanhoso")
-	g.adicionar_aresta("Póvoa de Lanhoso", "Fafe")
+	g.adicionar_aresta("Fafe", "Povoa de Lanhoso")
+	g.adicionar_aresta("Povoa de Lanhoso", "Fafe")
 
 	g.adicionar_aresta("Fafe", "Vieira do Minho")
 	g.adicionar_aresta("Vieira do Minho", "Fafe")
@@ -117,14 +117,14 @@ def main():
 	g.adicionar_aresta("Vieira do Minho", "Terras de Bouro")
 	g.adicionar_aresta("Terras de Bouro", "Vieira do Minho")
 
-	g.adicionar_aresta("Vieira do Minho", "Póvoa de Lanhoso")
-	g.adicionar_aresta("Póvoa de Lanhoso", "Vieira do Minho")
+	g.adicionar_aresta("Vieira do Minho", "Povoa de Lanhoso")
+	g.adicionar_aresta("Povoa de Lanhoso", "Vieira do Minho")
 
 	g.adicionar_aresta("Terras de Bouro", "Amares")
 	g.adicionar_aresta("Amares", "Terras de Bouro")
 
-	g.adicionar_aresta("Amares", "Póvoa de Lanhoso")
-	g.adicionar_aresta("Póvoa de Lanhoso", "Amares")
+	g.adicionar_aresta("Amares", "Povoa de Lanhoso")
+	g.adicionar_aresta("Povoa de Lanhoso", "Amares")
 	
 
 
@@ -173,10 +173,8 @@ def main():
 			input("Pressione Enter para continuar...")
 
 		elif saida == 7:
-			inicio = input("Digite o nó inicial: ")
-			objetivo = input("Digite o nó objetivo: ")
 			try:
-				g.a_star(inicio, objetivo)
+				g.a_star()
 			except ValueError as e:
 				print(e)
 			input("Pressione Enter para continuar...")

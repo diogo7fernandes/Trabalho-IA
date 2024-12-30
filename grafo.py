@@ -40,22 +40,10 @@ class Grafo:
 
 	def calcular_peso(self, origem, destino):
 
-		atributos_origem = self.m_nodos.get(origem)
+		
 		atributos_destino = self.m_nodos.get(destino)
 
-		coordenadas_origem = atributos_origem.get("coordenadas")
-		coordenadas_destino = atributos_destino.get("coordenadas")
-
-		if not coordenadas_origem or not coordenadas_destino:
-			raise ValueError(
-				"Coordenadas ausentes para calcular o peso entre '{}' e '{}'.".format(
-					origem, destino
-				)
-			)
-
-		x1, y1 = coordenadas_origem
-		x2, y2 = coordenadas_destino
-		distancia = Grafo.calcular_distancia(x1, y1, x2, y2)
+		distancia = self.calcular_distancia(origem, destino)
 
 		prioridade = atributos_destino.get("prioridade", 1)
 		acessibilidade = atributos_destino.get("acessibilidade", 1)
@@ -67,23 +55,26 @@ class Grafo:
 
 		return round(c_total, 2)
 
-	def calcular_distancia(lat1, lon1, lat2, lon2):
+	def calcular_distancia(self, nodo1, nodo2):
 
-		# Converter graus para radianos
-		lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+		coordenadas1 = self.m_nodos[nodo1].get("coordenadas")
+		coordenadas2 = self.m_nodos[nodo2].get("coordenadas")
 
-		# Diferenças
-		delta_lat = lat2 - lat1
-		delta_lon = lon2 - lon1
+		if not coordenadas1 or not coordenadas2:
+			raise ValueError(f"Faltam coordenadas para os nós {nodo1} ou {nodo2}.")
 
-		# Fórmula Haversine
-		a = (
-			math.sin(delta_lat / 2) ** 2
-			+ math.cos(lat1) * math.cos(lat2) * math.sin(delta_lon / 2) ** 2
-		)
-		c = 2 * math.asin(math.sqrt(a))
+		lat1, lon1 = map(math.radians, coordenadas1)
+		lat2, lon2 = map(math.radians, coordenadas2)
+
+		# Fórmula de Haversine
+		dlat = lat2 - lat1
+		dlon = lon2 - lon1
+		a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+		c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 		R = 6371  # Raio da Terra em km
-		return R * c
+
+		return R * c  # Retorna a distância em quilômetros
+
 
 	def desenha(self):
 
@@ -141,13 +132,13 @@ class Grafo:
 	@staticmethod
 	def escolher_transporte(acessibilidade):
 
-		if 0 <= acessibilidade <= 2:
+		if (0 <= acessibilidade <= 5):
 			return Carro()
-		elif 3 <= acessibilidade <= 5:
+		elif (3 <= acessibilidade <= 7):
 			return Moto()
-		elif 6 <= acessibilidade <= 8:
+		elif (6 <= acessibilidade <= 10):
 			return Helicoptero()
-		elif 9 <= acessibilidade <= 10:
+		elif (0 <= acessibilidade <= 10):
 			return Drone()
 		return None
 
@@ -175,96 +166,9 @@ class Grafo:
 		print(
 			f"A distância entre {origem} e {destino} é aproximadamente {distancia:.2f} km."
 		)
-
-	def custo_uniforme(self):
-
-		# Inicializar os veículos
-		frota = [tr.Carro(), tr.Moto(), tr.Helicoptero(), tr.Drone()]
-		grafo = Grafo()
-
-		inicio = "Centro"
-		if inicio not in self.m_nodos:
-			raise ValueError("Nó 'Centro' não existe no grafo.")
-
-		# Fila de prioridade: (custo acumulado, nó atual, veículo, kms restantes, caminho percorrido, tempo total)
-		fila_prioridade = [(0, inicio, veiculo, [inicio], 0) for veiculo in frota]
-		visitados = set()
-		custo_total = 0
-		tempo_total = 0
-
-		while fila_prioridade:
-			# Extrair o nó com o menor custo acumulado
-			custo_atual, atual, veiculo, caminho, tempo = heapq.heappop(fila_prioridade)
-			atributos = self.m_nodos[atual]
-
-			# Marcar o nó como visitado por este veículo
-			visitados.add((atual, veiculo.nome))
-
-			if atributos["alimentos"] > 0:
-				# Entregar suprimentos até o limite do veículo
-				tr.Transporte.descarregar(veiculo, atributos["alimentos"])
-				if atributos["alimentos"] == 0:
-					atributos["prioridade"] = (
-						0  # Zerar a prioridade se a entrega for concluída
-					)
-
-			# Atualizar o custo total e o tempo total
-			custo_total += custo_atual
-			tempo_total += tempo
-
-			# Adicionar os vizinhos não visitados à fila de prioridade
-			for vizinho, peso in self.m_grafo.get(atual, []):
-				if (vizinho, veiculo.nome) not in visitados:
-
-					coordenadas_atual = self.m_nodos[atual].get("coordenadas")
-					coordenadas_vizinho = self.m_nodos[vizinho].get("coordenadas")
-					lat1, lon1 = coordenadas_atual
-					lat2, lon2 = coordenadas_vizinho
-
-					# Calcular a distância usando a fórmula de Haversine
-					distancia = Grafo.calcular_distancia(lat1, lon1, lat2, lon2)
-					tempo_gasto = distancia / veiculo.velocidade
-
-					# ver o caminho
-
-					if veiculo.autonomia >= distancia:
-
-						tr.Transporte.viajar(veiculo, distancia)
-						print(vizinho)
-
-						# Veículo pode alcançar o vizinho
-						heapq.heappush(
-							fila_prioridade,
-							(
-								custo_atual + distancia,
-								vizinho,
-								veiculo,
-								caminho + [vizinho],
-								tempo + tempo_gasto,
-							),
-						)
-					elif veiculo.nome == "Helicóptero" or veiculo.autonomia < distancia:
-						tr.Transporte.abastecer(veiculo)
-						# Reabastecer combustível (mantém a posição)
-						heapq.heappush(
-							fila_prioridade,
-							(
-								custo_atual + distancia,
-								atual,
-								veiculo,
-								caminho,
-								tempo + 1,
-							),  # Adiciona 1h para reabastecer
-						)
-					if vizinho == inicio:
-						# Reabastecer suprimentos (voltar ao centro)
-						tr.Transporte.carregar(veiculo)
-
-		return caminho, custo_total, tempo_total
 	
 	
 	def procura_BFS(self, inicio):
-    
 		if inicio not in self.m_nodos:
 			raise ValueError(f"Nó '{inicio}' não existe no grafo.")
 
@@ -290,16 +194,19 @@ class Grafo:
 
 					# Calcular tempo de viagem para o nó
 					for vizinho, peso in self.m_grafo.get(atual, []):
+						distancia = self.calcular_distancia(atual, vizinho)
+
 						if vizinho not in visitados:
-							if transporte.autonomia >= peso:  # Verifica se o transporte pode alcançar o próximo nó
-								fila.append((vizinho, custo_atual + peso))
-								transporte.autonomia -= peso
-								tempo_total += peso / transporte.velocidade
+							if transporte.autonomia >= distancia:
+								fila.append((vizinho, custo_atual + distancia))
+								transporte.autonomia -= distancia
+								tempo_total += distancia / transporte.velocidade
 							else:
 								print(f"Autonomia insuficiente para {transporte.nome} alcançar {vizinho}. Reabastecimento necessário.")
 								transporte.abastecer()
 
-					custo_total = custo_atual
+					# Atualizar o custo total com o custo acumulado atual
+					custo_total = max(custo_total, custo_atual)
 
 			resultados.append((transporte.nome, caminho, custo_total, tempo_total))
 
@@ -309,6 +216,7 @@ class Grafo:
 			print(f"Caminho: {caminho}")
 			print(f"Custo Total: {custo}")
 			print(f"Tempo Total: {tempo:.2f} horas")
+
 
 
 	
@@ -359,23 +267,47 @@ class Grafo:
 			print(f"Custo Total: {custo}")
 			print(f"Tempo Total: {tempo:.2f} horas")
 
+	def heuristica_grafo(self):
+		"""
+		Retorna uma lista de localidades ordenadas pela prioridade (maior para menor).
+		"""
+		if not self.m_nodos:
+			raise ValueError("O grafo não possui nós para serem organizados.")
+
+		# Criar uma lista de tuplas (localidade, prioridade)
+		prioridades = [
+			(nodo, atributos.get("prioridade", 0)) for nodo, atributos in self.m_nodos.items()
+		]
+
+		# Ordenar pela prioridade (decrescente)
+		prioridades_ordenadas = sorted(prioridades, key=lambda x: x[1], reverse=True)
+
+		# Retornar a lista de localidades ordenadas
+		return [localidade for localidade, _ in prioridades_ordenadas]
 
 
-	def a_star(self, inicio, objetivo):
-    
+
+	def a_star(self):
+		"""
+		Implementação do algoritmo A* considerando transportes com diferentes autonomias.
+		"""
+		inicio = 'Centro'
+		loc = self.heuristica_grafo()
+		objetivo = loc[1]  # Objetivo é o segundo nó com maior prioridade
+		
 		if inicio not in self.m_nodos or objetivo not in self.m_nodos:
 			raise ValueError("Nó inicial ou objetivo não existe no grafo.")
 
-		from transporte import Carro, Moto, Helicoptero, Drone
-
+		# Lista de transportes disponíveis
 		transportes = [Carro(), Moto(), Helicoptero(), Drone()]
 		resultados = []
 
 		for transporte in transportes:
 			fila_prioridade = []
-			heapq.heappush(fila_prioridade, (0, inicio, [inicio]))
+			heapq.heappush(fila_prioridade, (0, inicio, [inicio]))  # (f_custo, nó atual, caminho percorrido)
 			custos = {inicio: 0}
 			tempo_total = 0
+			autonomia_inicial = transporte.autonomia  # Salva a autonomia inicial do transporte
 
 			while fila_prioridade:
 				f_atual, atual, caminho = heapq.heappop(fila_prioridade)
@@ -387,23 +319,31 @@ class Grafo:
 
 				for vizinho, peso in self.m_grafo.get(atual, []):
 					if transporte.autonomia >= peso:  # Verifica se o transporte pode alcançar o próximo nó
-						g_custo = custos[atual] + peso
+						# Inicializa o custo para o vizinho, se necessário
+						if vizinho not in custos:
+							custos[vizinho] = float('inf')
+
+						g_custo = custos[atual] + peso  # Custo acumulado
 						h_custo = self.calcular_heuristica(vizinho, objetivo)
 						f_custo = g_custo + h_custo
-						heapq.heappush(fila_prioridade, (f_custo, vizinho, caminho + [vizinho]))
-						transporte.autonomia -= peso
-						tempo_total += peso / transporte.velocidade
-					else:
-						print(f"Autonomia insuficiente para {transporte.nome} alcançar {vizinho}. Reabastecimento necessário.")
-						transporte.abastecer()
 
-		# Output organizado
+						# Atualizar custos se o caminho for melhor ou se o vizinho ainda não tiver sido visitado
+						if g_custo < custos[vizinho]:
+							custos[vizinho] = g_custo
+							heapq.heappush(fila_prioridade, (f_custo, vizinho, caminho + [vizinho]))
+							transporte.autonomia -= peso
+							tempo_total += peso / transporte.velocidade
+					else:
+						print(f"Autonomia insuficiente para {transporte.nome} alcançar {vizinho}. Reabastecendo...")
+						transporte.abastecer()
+						
+
+		# Exibir resultados
 		for transporte_nome, caminho, custo, tempo in resultados:
 			print(f"\n--- Resultados para {transporte_nome} ---")
 			print(f"Caminho: {caminho}")
 			print(f"Custo Total: {custo}")
 			print(f"Tempo Total: {tempo:.2f} horas")
-
 
 
 	def calcular_heuristica(self, nodo, objetivo):
