@@ -4,6 +4,8 @@ sys.path.append(".")
 import math
 import os
 import json
+import subprocess
+import platform
 import transporte as tr
 import heapq
 import networkx as nx  # biblioteca de tratamento de grafos necessária para desnhar graficamente o grafo
@@ -381,11 +383,26 @@ class Grafo:
 		R = 6371  # Raio da Terra em km
 		return R * c
 
-
-
 	def imprimir_stats_nodos(self, filename="stats_nodos.json"):
-		
+		"""
+		Salva as estatísticas dos nós em um arquivo JSON e tenta abri-lo de forma multiplataforma.
+		:param filename: Nome do arquivo JSON onde os dados serão salvos.
+		"""
+		# Salvar os dados em um arquivo JSON
 		with open(filename, "w") as file:
 			json.dump(self.m_nodos, file, indent=4)
 		print(f"Estatísticas dos nós foram salvas em '{filename}'")
-		os.startfile(filename)
+		
+		# Abrir o arquivo de forma compatível com diferentes sistemas operacionais
+		sistema = platform.system()
+		try:
+			if sistema == "Windows":
+				os.startfile(filename)  # Windows
+			elif sistema == "Darwin":  # macOS
+				subprocess.run(["open", filename], check=True)
+			elif sistema == "Linux":  # Linux
+				subprocess.run(["xdg-open", filename], check=True)
+			else:
+				print(f"Não foi possível abrir o arquivo automaticamente no sistema {sistema}.")
+		except Exception as e:
+			print(f"Erro ao tentar abrir o arquivo: {e}")

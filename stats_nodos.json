@@ -4,34 +4,34 @@
             41.4679,
             -8.412
         ],
-        "prioridade": 8,
+        "prioridade": 1,
         "acessibilidade": 4,
-        "clima": 7,
-        "alimentos": 82,
+        "clima": 5,
+        "alimentos": 15,
         "reabastecimento": true,
-        "supply_refill": false
+        "supply_refill": true
     },
     "Braga": {
         "coordenadas": [
             41.5503,
             -8.4201
         ],
-        "prioridade": 8,
-        "acessibilidade": 6,
-        "clima": 5,
-        "alimentos": 75,
-        "reabastecimento": false,
-        "supply_refill": false
+        "prioridade": 10,
+        "acessibilidade": 10,
+        "clima": 1,
+        "alimentos": 34,
+        "reabastecimento": true,
+        "supply_refill": true
     },
     "Esposende": {
         "coordenadas": [
             41.532,
             -8.7832
         ],
-        "prioridade": 7,
-        "acessibilidade": 7,
-        "clima": 5,
-        "alimentos": 10,
+        "prioridade": 10,
+        "acessibilidade": 6,
+        "clima": 7,
+        "alimentos": 39,
         "reabastecimento": true,
         "supply_refill": true
     },
@@ -40,36 +40,36 @@
             41.5388,
             -8.6151
         ],
-        "prioridade": 9,
-        "acessibilidade": 2,
-        "clima": 0,
-        "alimentos": 97,
+        "prioridade": 2,
+        "acessibilidade": 7,
+        "clima": 7,
+        "alimentos": 5,
         "reabastecimento": false,
         "supply_refill": true
     },
-    "Vila Nova de Famalic\u00e3o": {
+    "Vila Nova de Famalicao": {
         "coordenadas": [
             41.4091,
             -8.5198
         ],
-        "prioridade": 10,
-        "acessibilidade": 4,
-        "clima": 3,
-        "alimentos": 70,
+        "prioridade": 4,
+        "acessibilidade": 3,
+        "clima": 1,
+        "alimentos": 0,
         "reabastecimento": false,
-        "supply_refill": false
+        "supply_refill": true
     },
-    "Guimar\u00e3es": {
+    "Guimaraes": {
         "coordenadas": [
             41.4444,
             -8.2962
         ],
-        "prioridade": 8,
-        "acessibilidade": 6,
-        "clima": 1,
-        "alimentos": 39,
+        "prioridade": 10,
+        "acessibilidade": 4,
+        "clima": 8,
+        "alimentos": 12,
         "reabastecimento": true,
-        "supply_refill": false
+        "supply_refill": true
     },
     "Vizela": {
         "coordenadas": [
@@ -77,11 +77,11 @@
             -8.2926
         ],
         "prioridade": 8,
-        "acessibilidade": 2,
-        "clima": 8,
-        "alimentos": 44,
-        "reabastecimento": true,
-        "supply_refill": false
+        "acessibilidade": 0,
+        "clima": 4,
+        "alimentos": 60,
+        "reabastecimento": false,
+        "supply_refill": true
     },
     "Fafe": {
         "coordenadas": [
@@ -89,22 +89,22 @@
             -8.1706
         ],
         "prioridade": 6,
-        "acessibilidade": 6,
-        "clima": 8,
-        "alimentos": 15,
-        "reabastecimento": false,
+        "acessibilidade": 2,
+        "clima": 3,
+        "alimentos": 22,
+        "reabastecimento": true,
         "supply_refill": false
     },
-    "P\u00f3voa de Lanhoso": {
+    "Povoa de Lanhoso": {
         "coordenadas": [
             41.5769,
             -8.2697
         ],
-        "prioridade": 6,
-        "acessibilidade": 7,
-        "clima": 2,
-        "alimentos": 40,
-        "reabastecimento": false,
+        "prioridade": 10,
+        "acessibilidade": 5,
+        "clima": 4,
+        "alimentos": 45,
+        "reabastecimento": true,
         "supply_refill": false
     },
     "Amares": {
@@ -112,22 +112,22 @@
             41.6308,
             -8.3514
         ],
-        "prioridade": 1,
-        "acessibilidade": 10,
-        "clima": 0,
-        "alimentos": 27,
-        "reabastecimento": false,
-        "supply_refill": false
+        "prioridade": 8,
+        "acessibilidade": 8,
+        "clima": 7,
+        "alimentos": 33,
+        "reabastecimento": true,
+        "supply_refill": true
     },
     "Vila Verde": {
         "coordenadas": [
             41.648,
             -8.4367
         ],
-        "prioridade": 0,
+        "prioridade": 6,
         "acessibilidade": 4,
-        "clima": 9,
-        "alimentos": 90,
+        "clima": 6,
+        "alimentos": 15,
         "reabastecimento": false,
         "supply_refill": false
     },
@@ -136,10 +136,10 @@
             41.7323,
             -8.3088
         ],
-        "prioridade": 9,
-        "acessibilidade": 9,
-        "clima": 5,
-        "alimentos": 70,
+        "prioridade": 1,
+        "acessibilidade": 10,
+        "clima": 3,
+        "alimentos": 45,
         "reabastecimento": true,
         "supply_refill": false
     },
@@ -148,10 +148,10 @@
             41.6325,
             -8.1461
         ],
-        "prioridade": 7,
-        "acessibilidade": 5,
-        "clima": 8,
-        "alimentos": 62,
+        "prioridade": 6,
+        "acessibilidade": 4,
+        "clima": 6,
+        "alimentos": 25,
         "reabastecimento": false,
         "supply_refill": true
     },
@@ -160,10 +160,10 @@
             41.3899,
             -8.0058
         ],
-        "prioridade": 5,
-        "acessibilidade": 0,
+        "prioridade": 9,
+        "acessibilidade": 1,
         "clima": 3,
-        "alimentos": 73,
+        "alimentos": 0,
         "reabastecimento": true,
         "supply_refill": false
     },
@@ -172,11 +172,11 @@
             41.5151,
             -7.9889
         ],
-        "prioridade": 7,
+        "prioridade": 1,
         "acessibilidade": 10,
-        "clima": 0,
-        "alimentos": 27,
-        "reabastecimento": false,
-        "supply_refill": true
+        "clima": 10,
+        "alimentos": 26,
+        "reabastecimento": true,
+        "supply_refill": false
     }
 }
