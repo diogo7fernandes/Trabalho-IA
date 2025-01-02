@@ -20,12 +20,13 @@ def main():
 			"clima": random.randint(0, 10),  # Valores de 0 a 10
 			"alimentos": random.randint(0, 100),  # Quantidade de alimentos necessarios na loc de 0 a 100
 			"reabastecimento": random.choice([True, False]),  # Verdadeiro se der para rewabastecer
-			"supply_refill": random.choice([True, False])
+			"supply_refill": random.choice([True, False]),
+			"TTL": random.randint(0, 100)
 
 		}
 
 	# Adicionando os nós com valores aleatórios
-	g.adicionar_nodo("Centro", {"coordenadas": (41.4679, -8.4120), **gerar_atributos_aleatorios()})
+	g.adicionar_nodo("Centro", {"coordenadas": (41.4679, -8.4120), "prioridade" : 0, "acessibilidade":0, "clima":0, "alimentos":0,"reabastecimento":True,"supply_refill":True,"TTL":10000})
 	g.adicionar_nodo("Braga", {"coordenadas": (41.5503, -8.4201), **gerar_atributos_aleatorios()})
 	g.adicionar_nodo("Esposende", {"coordenadas": (41.5320, -8.7832), **gerar_atributos_aleatorios()})
 	g.adicionar_nodo("Barcelos", {"coordenadas": (41.5388, -8.6151), **gerar_atributos_aleatorios()})
@@ -41,6 +42,17 @@ def main():
 	g.adicionar_nodo("Celourico de Basto", {"coordenadas": (41.3899, -8.0058), **gerar_atributos_aleatorios()})
 	g.adicionar_nodo("Cabeceiras de Basto", {"coordenadas": (41.5151, -7.9889), **gerar_atributos_aleatorios()})
 
+	def organizar_prioridade(self):
+		# Criar uma lista de tuplas (nó, prioridade) a partir do grafo, excluindo prioridades zero
+		prioridades = [(nodo, atributos["prioridade"]) for nodo, atributos in self.m_nodos.items() if atributos["alimentos"] > 0]
+
+		# Ordenar a lista pela prioridade de forma decrescente
+		prioridades_ordenadas = sorted(prioridades, key=lambda x: x[1], reverse=True)
+
+		# Retornar apenas os nomes dos nós, mantendo a ordem
+		return [nodo for nodo, _ in prioridades_ordenadas]
+
+	lista_prioridades = organizar_prioridade(g)
 
 	g.adicionar_aresta("Esposende", "Barcelos")
 	g.adicionar_aresta("Barcelos", "Esposende")
@@ -191,13 +203,13 @@ def main():
 			input("\nPressione Enter para continuar...")
 		elif saida == 6:
 			inicio = "Centro"
-			transportes = [Carro(), Moto(), Helicoptero(), Drone()]
-			try:
-				caminho = g.procura_BFS(inicio)
-				g.simular_transporte(caminho,Carro())
-				
-			except ValueError as e:
-				print(e)
+			transportes = [Carro()]
+			for transporte in transportes:
+				try:
+					g.procura_BFS(inicio,transporte,lista_prioridades)
+					
+				except ValueError as e:
+					print(e)
 			input("Pressione Enter para continuar...")
 
 		elif saida == 7:

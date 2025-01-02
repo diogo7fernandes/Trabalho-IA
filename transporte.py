@@ -23,18 +23,14 @@ class Transporte:
         else:
             quantidade = 0
             self.alimentos = self.alimentos - quantidade
-            
+
     def abastecer(self):
         self.autonomia = self.deposito
     
     def viajar(self, distancia):        
         # Atualizar a autonomia
         self.autonomia -= distancia
-        print(f"Viagem concluída. Autonomia restante: {self.autonomia:.2f} km. Com o {self.nome}")
 
-
-        # Retornar a distância percorrida
-        return distancia
 
 
 
