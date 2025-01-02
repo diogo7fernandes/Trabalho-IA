@@ -392,8 +392,14 @@ class Grafo:
 							transporte.autonomia -= peso
 							tempo_total += peso / transporte.velocidade
 					else:
-						print(f"Autonomia insuficiente para {transporte.nome} alcançar {vizinho}. Reabastecendo...")
-						transporte.abastecer()
+						if self.m_nodos[atual].get("reabastecimento", False):
+							print(f"Reabastecendo trasnporte {transporte.nome} no nó '{atual}'.")
+							transporte.reabastecer()
+						else:
+							printf(f"Nó '{atual}' não permite reabastecimento. Ignorando o vizinho '{vizinho}'.")
+							continue
+
+			transporte.autonomia = autonomia_inicial
 						
 
 		# Exibir resultados
