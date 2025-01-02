@@ -142,27 +142,28 @@ def main():
 
 	saida = -1
 	while saida != 0:
-		print("1-Imprimir Grafo")
-		print("2-Desenhar Grafo")
-		print("3-Imprimir  nodos de Grafo")
-		print("4-DFS")
-		print("5-BFS")
-		print("6-A*")
-		print("7-Custo uniforme")
-		print("8-Modificar situação de localidade")
-		print("0-Saír")
+		print("(1)Imprimir Grafo")
+		print("(2)Desenhar Grafo")
+		print("(3)Imprimir  nodos de Grafo")
+		print("(4)DFS")
+		print("(5)BFS")
+		print("(6)A*")
+		print("(7)Custo uniforme")
+		print("(8)Greedy")
+		print("(9)Modificar situação de localidade")
+		print("(0)Sair")
 
-		saida = int(input("introduza a sua opcao-> "))
+		saida = int(input("Introduza a sua opcao -> "))
 		if saida == 0:
-			print("saindo.......")
+			print("Saindo.......")
 		elif saida == 1:
 			print(g.m_grafo)
-			l = input("prima enter para continuar")
+			l = input("Pressione Enter para continuar...")
 		elif saida == 2:
 			g.desenha()
 		elif saida == 3:
 			print(g.imprimir_stats_nodos())
-			l = input("prima enter para continuar")
+			l = input("Pressione Enter para continuar...")
 		elif saida == 4:
 			# Instanciar os transportes
 			transportes = [
@@ -216,6 +217,18 @@ def main():
 			print(g.custo_uniforme())
 			l = input("prima enter para continuar")
 		elif saida == 8:
+			inicio = "Centro"  # Nó inicial
+			transportes = [Carro(), Moto(), Helicoptero(), Drone()]
+			for transporte in transportes:
+				try:
+					print(f"Executando Greedy para o transporte '{transporte.nome}'...")
+					caminho, custo_total = g.procura_greedy(inicio, transporte)
+					print(f"Caminho: {caminho}")
+					print(f"Custo Total: {custo_total}")
+				except ValueError as e:
+					print(e)
+			input("Pressione Enter para continuar...")
+		elif saida == 9:
 			nodo = input ("Localidade a alterar: ")
 			prioridade = input("Novo valor para prioridade (ou pressione Enter para ignorar): ")
 			acessibilidade = input("Novo valor para acessibilidade do terreno (ou pressione Enter para ignorar): ")
@@ -233,12 +246,12 @@ def main():
 			except ValueError as e:
 				print(e)
 
-			l = input("prima enter para continuar")
+			l = input("Pressione Enter para continuar...")
 	   
 
 		else:
 			print("you didn't add anything")
-			l = input("prima enter para continuar")
+			l = input("Pressione Enter para continuar...")
 
 
 if __name__ == "__main__":

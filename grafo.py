@@ -450,3 +450,46 @@ class Grafo:
 				print(f"Não foi possível abrir o arquivo automaticamente no sistema {sistema}.")
 		except Exception as e:
 			print(f"Erro ao tentar abrir o arquivo: {e}")
+   
+	def procura_greedy(self, inicio, transporte):
+		if inicio not in self.m_nodos:
+			raise ValueError(f"Nó '{inicio}' não existe no grafo.")
+
+		visitados = set()
+		fila_prioridade = [(inicio, 0)]  # Fila de prioridade (nó, custo acumulado)
+		caminho = []
+		custo_total = 0
+
+		while fila_prioridade:
+			atual, custo_atual = fila_prioridade.pop(0)  # Expandir o nó com maior prioridade
+			if atual not in visitados:
+				visitados.add(atual)
+				caminho.append(atual)
+				print(f"Visitando nó: {atual}, custo acumulado: {custo_atual}")
+
+				# Obter vizinhos ordenados pela prioridade
+				vizinhos = self.m_grafo.get(atual, [])
+				vizinhos_ordenados = sorted(
+					[viz for viz in vizinhos if viz[0] not in visitados],
+					key=lambda x: self.m_nodos[x[0]]["prioridade"],
+					reverse=True
+				)
+
+				for vizinho, peso in vizinhos_ordenados:
+					distancia = self.calcular_distancia(atual, vizinho)
+					if distancia > transporte.autonomia:
+						atributos = self.m_nodos[atual]
+						if atributos["reabastecimento"]:
+							transporte.abastecer()
+							custo_total += 1
+						else:
+							continue
+
+					transporte.viajar(distancia)
+					custo_total += distancia
+					fila_prioridade.append((vizinho, custo_total))
+
+		print(f"Caminho percorrido pelo transporte '{transporte.nome}': {caminho}")
+		print(f"Custo total pelo transporte '{transporte.nome}': {custo_total}")
+
+		return caminho, custo_total
