@@ -429,7 +429,7 @@ class Grafo:
 							print(f"Reabastecendo transporte {transporte.nome} no nó '{atual}'.")
 							transporte.reabastecer()
 						else:
-							printf(f"Nó '{atual}' não permite reabastecimento. Ignorando o vizinho '{vizinho}'.")
+							print(f"Nó '{atual}' não permite reabastecimento. Ignorando o vizinho '{vizinho}'.")
 							continue
 
 			transporte.autonomia = autonomia_inicial
