@@ -456,40 +456,44 @@ class Grafo:
 			raise ValueError(f"Nó '{inicio}' não existe no grafo.")
 
 		visitados = set()
-		fila_prioridade = [(inicio, 0)]  # Fila de prioridade (nó, custo acumulado)
+		fila_prioridade = [(0, inicio)]  # (heurística, nó)
 		caminho = []
 		custo_total = 0
 
 		while fila_prioridade:
-			atual, custo_atual = fila_prioridade.pop(0)  # Expandir o nó com maior prioridade
-			if atual not in visitados:
-				visitados.add(atual)
-				caminho.append(atual)
-				print(f"Visitando nó: {atual}, custo acumulado: {custo_atual}")
+			# Expandir o nó com menor valor de heurística
+			_, atual = heapq.heappop(fila_prioridade)
 
-				# Obter vizinhos ordenados pela prioridade
-				vizinhos = self.m_grafo.get(atual, [])
-				vizinhos_ordenados = sorted(
-					[viz for viz in vizinhos if viz[0] not in visitados],
-					key=lambda x: self.m_nodos[x[0]]["prioridade"],
-					reverse=True
-				)
+			if atual in visitados:
+				continue
 
-				for vizinho, peso in vizinhos_ordenados:
+			visitados.add(atual)
+			caminho.append(atual)
+			print(f"Visitando nó: {atual}")
+
+			# Processar vizinhos
+			for vizinho, peso in self.m_grafo.get(atual, []):
+				if vizinho not in visitados:
 					distancia = self.calcular_distancia(atual, vizinho)
+
+					# Verificar autonomia do transporte
 					if distancia > transporte.autonomia:
 						atributos = self.m_nodos[atual]
 						if atributos["reabastecimento"]:
 							transporte.abastecer()
-							custo_total += 1
+							custo_total += 1  # Custo para reabastecer
+							print(f"Reabastecendo em '{atual}' para continuar.")
 						else:
 							continue
 
 					transporte.viajar(distancia)
 					custo_total += distancia
-					fila_prioridade.append((vizinho, custo_total))
 
-		print(f"Caminho percorrido pelo transporte '{transporte.nome}': {caminho}")
-		print(f"Custo total pelo transporte '{transporte.nome}': {custo_total}")
+					# Calcular heurística e adicionar à fila
+					h_custo = self.calcular_heuristica(vizinho, inicio)
+					print(f"Heurística para nó '{vizinho}': {h_custo}")
+					heapq.heappush(fila_prioridade, (h_custo, vizinho))
 
+		print(f"Caminho percorrido: {caminho}")
+		print(f"Custo total: {custo_total}")
 		return caminho, custo_total
