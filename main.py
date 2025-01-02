@@ -145,12 +145,11 @@ def main():
 		print("1-Imprimir Grafo")
 		print("2-Desenhar Grafo")
 		print("3-Imprimir  nodos de Grafo")
-		print("4-Imprimir arestas de Grafo")
-		print("5-DFS")
-		print("6-BFS")
-		print("7-A*")
-		print("8-Custo uniforme")
-		print("9-Modificar situação de localidade")
+		print("4-DFS")
+		print("5-BFS")
+		print("6-A*")
+		print("7-Custo uniforme")
+		print("8-Modificar situação de localidade")
 		print("0-Saír")
 
 		saida = int(input("introduza a sua opcao-> "))
@@ -165,11 +164,6 @@ def main():
 			print(g.imprimir_stats_nodos())
 			l = input("prima enter para continuar")
 		elif saida == 4:
-			origem ="Esposende"
-			destino="Guimarães"
-			print(g.imprimir_distancia(origem,destino))
-			l = input("prima enter para continuar")
-		elif saida == 5:
 			# Instanciar os transportes
 			transportes = [
 				Carro(),
@@ -201,7 +195,7 @@ def main():
 				print(f"Custo total: {custos_totais.get(transporte.nome, 0)}")
 
 			input("\nPressione Enter para continuar...")
-		elif saida == 6:
+		elif saida == 5:
 			inicio = "Centro"
 			transportes = [Carro()]
 			for transporte in transportes:
@@ -212,16 +206,16 @@ def main():
 					print(e)
 			input("Pressione Enter para continuar...")
 
-		elif saida == 7:
+		elif saida == 6:
 			try:
 				g.a_star()
 			except ValueError as e:
 				print(e)
 			input("Pressione Enter para continuar...")
-		elif saida == 8:
+		elif saida == 7:
 			print(g.custo_uniforme())
 			l = input("prima enter para continuar")
-		elif saida == 9:
+		elif saida == 8:
 			nodo = input ("Localidade a alterar: ")
 			prioridade = input("Novo valor para prioridade (ou pressione Enter para ignorar): ")
 			acessibilidade = input("Novo valor para acessibilidade do terreno (ou pressione Enter para ignorar): ")

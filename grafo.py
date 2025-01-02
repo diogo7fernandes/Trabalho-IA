@@ -93,7 +93,7 @@ class Grafo:
 				g.add_edge(origem, destino, weight=peso)
 
 		# Definir o layout para os nós
-		pos = nx.spring_layout(g)
+		pos = nx.spring_layout(g, seed = 1)
 
 		# Desenhar os nós e arestas
 		nx.draw_networkx(
@@ -165,9 +165,7 @@ class Grafo:
 
 		# Calcular a distância usando a fórmula de Haversine
 		distancia = Grafo.calcular_distancia(lat1, lon1, lat2, lon2)
-		print(
-			f"A distância entre {origem} e {destino} é aproximadamente {distancia:.2f} km."
-		)
+		print(f"A distância entre {origem} e {destino} é aproximadamente {distancia:.2f} km.")
 	
 	def procura_BFS(self, inicio, transporte, objetivos):
 		if inicio not in self.m_nodos:
@@ -269,14 +267,6 @@ class Grafo:
 		return caminho_total, custo_total
 
 
-
-
-
-
-
-
-
-	
 
 
 	def procura_DFS_prioritario(self, inicio, transporte):
