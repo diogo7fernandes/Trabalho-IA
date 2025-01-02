@@ -393,7 +393,7 @@ class Grafo:
 							tempo_total += peso / transporte.velocidade
 					else:
 						if self.m_nodos[atual].get("reabastecimento", False):
-							print(f"Reabastecendo trasnporte {transporte.nome} no nó '{atual}'.")
+							print(f"Reabastecendo transporte {transporte.nome} no nó '{atual}'.")
 							transporte.reabastecer()
 						else:
 							printf(f"Nó '{atual}' não permite reabastecimento. Ignorando o vizinho '{vizinho}'.")
