@@ -177,25 +177,33 @@ def main():
 			custos_totais = {}
 
 			for transporte in transportes:
-				print(f"Executando DFS para o transporte '{transporte.nome}'...")
+				print(f"\nExecutando DFS para o transporte '{transporte.nome}'...")
 				try:
-					inicio = "Centro"  # Nó inicial para cada transporte
+					inicio = "Centro"  # Define o nó inicial para cada transporte
+
+					# Executar o método de busca DFS
 					caminho, custo_total = g.procura_DFS_prioritario(inicio, transporte)
 
 					# Salvar resultados
 					caminhos_totais[transporte.nome] = caminho
 					custos_totais[transporte.nome] = custo_total
 
+					# Exibir resultados intermediários
+					print(f"\nResultados parciais para o transporte '{transporte.nome}':")
+					print(f"Caminho percorrido: {caminho}")
+					print(f"Custo total acumulado: {custo_total}")
+
 				except ValueError as e:
 					print(f"Erro ao processar transporte '{transporte.nome}': {e}")
 
-			# Imprimir resultados finais
+			# Imprimir resultados finais para todos os transportes
+			print("\nResultados Finais:")
 			for transporte in transportes:
 				print(f"\nTransporte: {transporte.nome}")
 				print(f"Caminho percorrido: {caminhos_totais.get(transporte.nome, [])}")
 				print(f"Custo total: {custos_totais.get(transporte.nome, 0)}")
-
-			input("\nPressione Enter para continuar...")
+			
+			input("Pressione Enter para continuar...")
 		elif saida == 5:
 			inicio = "Centro"
 			transportes = [Carro()]

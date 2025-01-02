@@ -270,59 +270,92 @@ class Grafo:
 
 
 	def procura_DFS_prioritario(self, inicio, transporte):
+   
 		if inicio not in self.m_nodos:
 			raise ValueError(f"Nó '{inicio}' não existe no grafo.")
 
+		# Criar lista de nodos ordenados por prioridade decrescente
+		objetivos = sorted(
+			[(nodo, atributos["prioridade"]) for nodo, atributos in self.m_nodos.items() if atributos["prioridade"] > 0],
+			key=lambda x: x[1],
+			reverse=True
+		)
+		objetivos = [nodo for nodo, _ in objetivos]
+
+		print(f"Lista inicial de objetivos ordenados por prioridade: {objetivos}")
+
 		visitados = set()
-		pilha = [(inicio, 0)]  # Pilha com (nó, custo acumulado)
-		caminho = []
+		caminho_total = []
 		custo_total = 0
 
-		while pilha:
-			atual, custo_atual = pilha.pop()
-			if atual not in visitados:
-				visitados.add(atual)
-				caminho.append(atual)
-				print(f"Visitando nó: {atual}, custo acumulado: {custo_atual}")
+		def dfs_recursivo(atual):
+			nonlocal custo_total
 
-				atributos = self.m_nodos[atual]
+			# Verificar se há objetivos restantes
+			if not objetivos:
+				print("Todos os objetivos foram visitados.")
+				return
 
-				# Processar vizinhos
-				vizinhos = self.m_grafo.get(atual, [])
-				if not vizinhos:
-					print(f"Sem vizinhos disponíveis para o nó '{atual}'.")
-					continue
+			# Atualizar o objetivo atual
+			objetivo_atual = objetivos[0]
 
-				vizinho_prioritario = max(
-					[viz for viz in vizinhos if viz[0] not in visitados],
-					key=lambda x: self.m_nodos[x[0]]["prioridade"],
-					default=None
-				)
+			print(f"Iniciando DFS de '{atual}' para '{objetivo_atual}'...")
 
-				if vizinho_prioritario is None:
-					print(f"Sem vizinhos prioritários disponíveis para o nó '{atual}'.")
-					continue
+			pilha = [(atual, 0)]  # Pilha com (nó, custo acumulado)
 
-				vizinho, peso = vizinho_prioritario
-				distancia = self.calcular_distancia(atual, vizinho)
+			while pilha:
+				nodo_atual, custo_atual = pilha.pop()
 
-				# Verificar autonomia e reabastecimento
-				if distancia > transporte.autonomia:
-					if atributos["reabastecimento"]:
-						transporte.abastecer()
-					else:
-						print(f"Nó '{atual}' não permite reabastecimento. Nó ignorado.")
+				if nodo_atual not in visitados:
+					visitados.add(nodo_atual)
+					caminho_total.append(nodo_atual)
+					print(f"Visitando nó: {nodo_atual}, custo acumulado: {custo_atual}")
+
+					# Processar vizinhos
+					vizinhos = self.m_grafo.get(nodo_atual, [])
+					vizinho_prioritario = max(
+						[viz for viz in vizinhos if viz[0] not in visitados],
+						key=lambda x: self.m_nodos[x[0]]["prioridade"],
+						default=None
+					)
+
+					if vizinho_prioritario is None:
+						print(f"Sem vizinhos prioritários disponíveis para o nó '{nodo_atual}'.")
 						continue
 
-				# Usar o transporte para o próximo nó
-				transporte.viajar(distancia)
-				custo_total += distancia
-				pilha.append((vizinho, custo_total))
+					vizinho, peso = vizinho_prioritario
+					distancia = self.calcular_distancia(nodo_atual, vizinho)
 
-		print(f"Caminho percorrido pelo transporte '{transporte.nome}': {caminho}")
+					# Verificar autonomia e reabastecimento
+					if distancia > transporte.autonomia:
+						if self.m_nodos[nodo_atual].get("reabastecimento", False):
+							print(f"Reabastecendo transporte no nó '{nodo_atual}'.")
+							transporte.abastecer()
+						else:
+							print(f"Nó '{nodo_atual}' não permite reabastecimento. Nó ignorado.")
+							continue
+
+					# Usar o transporte para o próximo nó
+					transporte.viajar(distancia)
+					custo_total += distancia
+					pilha.append((vizinho, custo_atual + distancia))
+
+				# Se alcançamos o objetivo atual, remove-o da lista e reinicia
+				if nodo_atual == objetivo_atual:
+					print(f"Objetivo '{objetivo_atual}' alcançado!")
+					objetivos.pop(0)  # Remove o objetivo alcançado
+					print(f"Objetivos restantes: {objetivos}")
+					print(f"Nodos visitados até agora: {list(visitados)}")
+					dfs_recursivo(nodo_atual)  # Chamada recursiva para o próximo objetivo
+					break
+
+		dfs_recursivo(inicio)
+
+		print(f"\nCaminho total percorrido pelo transporte '{transporte.nome}': {caminho_total}")
 		print(f"Custo total pelo transporte '{transporte.nome}': {custo_total}")
 
-		return caminho, custo_total
+		return caminho_total, custo_total
+
 			
 
 	def heuristica_grafo(self):
