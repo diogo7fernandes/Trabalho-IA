@@ -142,16 +142,16 @@ def main():
 
 	saida = -1
 	while saida != 0:
-		print("(1)Imprimir Grafo")
-		print("(2)Desenhar Grafo")
-		print("(3)Imprimir  nodos de Grafo")
-		print("(4)DFS")
-		print("(5)BFS")
-		print("(6)A*")
-		print("(7)Custo uniforme")
-		print("(8)Greedy")
-		print("(9)Modificar situação de localidade")
-		print("(0)Sair")
+		print("(1) Imprimir Grafo")
+		print("(2) Desenhar Grafo")
+		print("(3) Imprimir  nodos de Grafo")
+		print("(4) DFS")
+		print("(5) BFS")
+		print("(6) A*")
+		print("(7) Custo uniforme")
+		print("(8) Greedy")
+		print("(9) Modificar situação de localidade")
+		print("(0) Sair")
 
 		saida = int(input("Introduza a sua opcao -> "))
 		if saida == 0:
