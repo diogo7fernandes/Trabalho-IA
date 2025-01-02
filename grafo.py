@@ -235,50 +235,60 @@ class Grafo:
 	
 
 
-	def procura_DFS(self, inicio):
-	
+	def procura_DFS_prioritario(self, inicio, transporte):
 		if inicio not in self.m_nodos:
 			raise ValueError(f"Nó '{inicio}' não existe no grafo.")
 
-		transportes = [Carro(), Moto(), Helicoptero(), Drone()]
-		resultados = []
+		visitados = set()
+		pilha = [(inicio, 0)]  # Pilha com (nó, custo acumulado)
+		caminho = []
+		custo_total = 0
 
-		for transporte in transportes:
-			visitados = set()
-			caminho = []
-			pilha = [(inicio, 0)]  # Pilha com (nó, custo acumulado)
+		while pilha:
+			atual, custo_atual = pilha.pop()
+			if atual not in visitados:
+				visitados.add(atual)
+				caminho.append(atual)
+				print(f"Visitando nó: {atual}, custo acumulado: {custo_atual}")
 
-			custo_total = 0
-			tempo_total = 0
+				atributos = self.m_nodos[atual]
 
-			while pilha:
-				atual, custo_atual = pilha.pop()
+				# Processar vizinhos
+				vizinhos = self.m_grafo.get(atual, [])
+				if not vizinhos:
+					print(f"Sem vizinhos disponíveis para o nó '{atual}'.")
+					continue
 
-				if atual not in visitados:
-					visitados.add(atual)
-					caminho.append(atual)
+				vizinho_prioritario = max(
+					[viz for viz in vizinhos if viz[0] not in visitados],
+					key=lambda x: self.m_nodos[x[0]]["prioridade"],
+					default=None
+				)
 
-					# Calcular tempo de viagem para o nó
-					for vizinho, peso in self.m_grafo.get(atual, []):
-						if vizinho not in visitados:
-							if transporte.autonomia >= peso:  # Verifica se o transporte pode alcançar o próximo nó
-								pilha.append((vizinho, custo_atual + peso))
-								transporte.autonomia -= peso
-								tempo_total += peso / transporte.velocidade
-							else:
-								print(f"Autonomia insuficiente para {transporte.nome} alcançar {vizinho}. Reabastecimento necessário.")
-								transporte.abastecer()
+				if vizinho_prioritario is None:
+					print(f"Sem vizinhos prioritários disponíveis para o nó '{atual}'.")
+					continue
 
-					custo_total = custo_atual
+				vizinho, peso = vizinho_prioritario
+				distancia = self.calcular_distancia(atual, vizinho)
 
-			resultados.append((transporte.nome, caminho, custo_total, tempo_total))
+				# Verificar autonomia e reabastecimento
+				if distancia > transporte.autonomia:
+					if atributos["reabastecimento"]:
+						transporte.abastecer()
+					else:
+						print(f"Nó '{atual}' não permite reabastecimento. Nó ignorado.")
+						continue
 
-		# Output organizado
-		for transporte_nome, caminho, custo, tempo in resultados:
-			print(f"\n--- Resultados para {transporte_nome} ---")
-			print(f"Caminho: {caminho}")
-			print(f"Custo Total: {custo}")
-			print(f"Tempo Total: {tempo:.2f} horas")
+				# Usar o transporte para o próximo nó
+				transporte.viajar(distancia)
+				custo_total += distancia
+				pilha.append((vizinho, custo_total))
+
+		print(f"Caminho percorrido pelo transporte '{transporte.nome}': {caminho}")
+		print(f"Custo total pelo transporte '{transporte.nome}': {custo_total}")
+
+		return caminho, custo_total
 			
 
 	def heuristica_grafo(self):
