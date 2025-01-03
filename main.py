@@ -2,19 +2,11 @@ import sys
 from grafo import Grafo
 import random
 from transporte import Carro, Moto, Helicoptero, Drone
-import os
 import copy
 
-sys.path.append(".")  # Adiciona o diretório atual ao PYTHONPATH
+sys.path.append(".")
 
 def guardar_resultados(algoritmo, caminho, custo_total):
-    """
-    Salva os resultados de um algoritmo num ficheiro externo.
-
-    :param algoritmo: Nome do algoritmo.
-    :param caminho: Caminho percorrido.
-    :param custo_total: Custo total.
-    """
     nome_ficheiro = f"resultados_{algoritmo}.txt"
 
     with open(nome_ficheiro, "a") as ficheiro:
@@ -24,26 +16,20 @@ def guardar_resultados(algoritmo, caminho, custo_total):
         ficheiro.write("-" * 40 + "\n")
 
 def main():
-
     g = Grafo()
 
-
-# Função para gerar valores aleatórios
     def gerar_atributos_aleatorios():
         return {
-            "prioridade": random.randint(0, 10),  # Valores de 0 a 10
-            "acessibilidade": random.randint(0, 10),  # Valores de 0 a 10
-            # valores de acessibilidade para carros:0-2, mota:3-5, helicoptero:6-8, drone:9-10
-            "clima": random.randint(0, 10),  # Valores de 0 a 10
-            "alimentos": random.randint(0, 100),  # Quantidade de alimentos necessarios na loc de 0 a 100
-            "reabastecimento": random.choice([True, False]),  # Verdadeiro se der para rewabastecer
+            "prioridade": random.randint(0, 10),
+            "acessibilidade": random.randint(0, 10),
+            "clima": random.randint(0, 10),
+            "alimentos": random.randint(0, 100),
+            "reabastecimento": random.choice([True, False]),
             "supply_refill": random.choice([True, False]),
             "TTL": random.randint(0, 100)
-
         }
 
-    # Adicionando os nós com valores aleatórios
-    g.adicionar_nodo("Centro", {"coordenadas": (41.4679, -8.4120), "prioridade" : 0, "acessibilidade":0, "clima":0, "alimentos":0,"reabastecimento":True,"supply_refill":True,"TTL":10000})
+    g.adicionar_nodo("Centro", {"coordenadas": (41.4679, -8.4120), "prioridade": 0, "acessibilidade": 0, "clima": 0, "alimentos": 0, "reabastecimento": True, "supply_refill": True, "TTL": 10000})
     g.adicionar_nodo("Braga", {"coordenadas": (41.5503, -8.4201), **gerar_atributos_aleatorios()})
     g.adicionar_nodo("Esposende", {"coordenadas": (41.5320, -8.7832), **gerar_atributos_aleatorios()})
     g.adicionar_nodo("Barcelos", {"coordenadas": (41.5388, -8.6151), **gerar_atributos_aleatorios()})
@@ -60,124 +46,105 @@ def main():
     g.adicionar_nodo("Cabeceiras de Basto", {"coordenadas": (41.5151, -7.9889), **gerar_atributos_aleatorios()})
 
     def organizar_prioridade(self):
-        # Criar uma lista de tuplas (nó, prioridade) a partir do grafo, excluindo prioridades zero
         prioridades = [(nodo, atributos["prioridade"]) for nodo, atributos in self.m_nodos.items() if atributos["alimentos"] > 0]
-
-        # Ordenar a lista pela prioridade de forma decrescente
         prioridades_ordenadas = sorted(prioridades, key=lambda x: x[1], reverse=True)
-
-        # Retornar apenas os nomes dos nós, mantendo a ordem
         return [nodo for nodo, _ in prioridades_ordenadas]
 
     lista_prioridades = organizar_prioridade(g)
 
     def copiar_grafo(grafo_original):
-        """
-        Faz uma cópia profunda do grafo, garantindo que alterações na cópia 
-        não afetem o grafo original.
-
-        Args:
-            grafo_original (Grafo): O grafo original a ser copiado.
-
-        Returns:
-            Grafo: Uma nova instância do grafo copiada.
-        """
-            # Criar uma nova instância da classe Grafo
         grafo_copiado = Grafo()
-
-        # Copiar os nós e as arestas de forma independente
         grafo_copiado.m_nodos = copy.deepcopy(grafo_original.m_nodos)
         grafo_copiado.m_grafo = copy.deepcopy(grafo_original.m_grafo)
-
         return grafo_copiado
 
     g.adicionar_aresta("Esposende", "Barcelos")
     g.adicionar_aresta("Barcelos", "Esposende")
-
+    
     g.adicionar_aresta("Barcelos", "Vila Nova de Famalicao")
     g.adicionar_aresta("Vila Nova de Famalicao", "Barcelos")
-
+    
     g.adicionar_aresta("Barcelos", "Vila Verde")
     g.adicionar_aresta("Vila Verde", "Barcelos")
-
+    
     g.adicionar_aresta("Barcelos", "Braga")
     g.adicionar_aresta("Braga", "Barcelos")
-
+    
     g.adicionar_aresta("Vila Verde", "Braga")
     g.adicionar_aresta("Braga", "Vila Verde")
-
+    
     g.adicionar_aresta("Vila Verde", "Terras de Bouro")
     g.adicionar_aresta("Terras de Bouro", "Vila Verde")
-
+    
     g.adicionar_aresta("Vila Verde", "Amares")
     g.adicionar_aresta("Amares", "Vila Verde")
-
+    
     g.adicionar_aresta("Braga", "Centro")
     g.adicionar_aresta("Centro", "Braga")
-
+    
     g.adicionar_aresta("Braga", "Vila Nova de Famalicao")
     g.adicionar_aresta("Vila Nova de Famalicao", "Braga")
-
+    
     g.adicionar_aresta("Braga", "Amares")
     g.adicionar_aresta("Amares", "Braga")
-
+    
     g.adicionar_aresta("Braga", "Guimaraes")
     g.adicionar_aresta("Guimaraes", "Braga")
-
+    
     g.adicionar_aresta("Braga", "Povoa de Lanhoso")
     g.adicionar_aresta("Povoa de Lanhoso", "Braga")
-
+    
     g.adicionar_aresta("Guimaraes", "Vila Nova de Famalicao")
     g.adicionar_aresta("Vila Nova de Famalicao", "Guimaraes")
-
+    
     g.adicionar_aresta("Guimaraes", "Vizela")
     g.adicionar_aresta("Vizela", "Guimaraes")
-
+    
     g.adicionar_aresta("Guimaraes", "Fafe")
     g.adicionar_aresta("Fafe", "Guimaraes")
-
+    
     g.adicionar_aresta("Guimaraes", "Povoa de Lanhoso")
     g.adicionar_aresta("Povoa de Lanhoso", "Guimaraes")
-
+    
     g.adicionar_aresta("Guimaraes", "Centro")
     g.adicionar_aresta("Centro", "Guimaraes")
-
+    
     g.adicionar_aresta("Vila Nova de Famalicao", "Centro")
     g.adicionar_aresta("Centro", "Vila Nova de Famalicao")
-
+    
     g.adicionar_aresta("Fafe", "Povoa de Lanhoso")
     g.adicionar_aresta("Povoa de Lanhoso", "Fafe")
-
+    
     g.adicionar_aresta("Fafe", "Vieira do Minho")
     g.adicionar_aresta("Vieira do Minho", "Fafe")
-
+    
     g.adicionar_aresta("Fafe", "Celourico de Basto")
     g.adicionar_aresta("Celourico de Basto", "Fafe")
-
+    
     g.adicionar_aresta("Fafe", "Cabeceiras de Basto")
     g.adicionar_aresta("Cabeceiras de Basto", "Fafe")
-
+    
     g.adicionar_aresta("Cabeceiras de Basto", "Celourico de Basto")
     g.adicionar_aresta("Celourico de Basto", "Cabeceiras de Basto")
-
+    
     g.adicionar_aresta("Cabeceiras de Basto", "Vieira do Minho")
     g.adicionar_aresta("Vieira do Minho", "Cabeceiras de Basto")
-
+    
     g.adicionar_aresta("Vieira do Minho", "Terras de Bouro")
     g.adicionar_aresta("Terras de Bouro", "Vieira do Minho")
-
+    
     g.adicionar_aresta("Vieira do Minho", "Povoa de Lanhoso")
     g.adicionar_aresta("Povoa de Lanhoso", "Vieira do Minho")
-
+    
     g.adicionar_aresta("Terras de Bouro", "Amares")
     g.adicionar_aresta("Amares", "Terras de Bouro")
-
+    
     g.adicionar_aresta("Amares", "Povoa de Lanhoso")
     g.adicionar_aresta("Povoa de Lanhoso", "Amares")
 
     saida = -1
     while saida != 0:
-        print("(1) Imprimir Grafo")
+        print("\n(1) Imprimir Grafo")
         print("(2) Desenhar Grafo")
         print("(3) Imprimir  nodos de Grafo")
         print("(4) DFS")
@@ -205,7 +172,7 @@ def main():
             print("Por favor, introduza um número válido entre 0 e 9")
             input("Pressione Enter para continuar...")
             continue
-        
+
         if saida == 0:
             print("Saindo.......")
         elif saida == 1:
@@ -227,7 +194,6 @@ def main():
             for transporte in transportes:
                 try:
                     caminho, custo_total = gg.procura_DFS(inicio, transporte, lista_prioridades)
-                    # Salvar resultados no ficheiro
                     guardar_resultados(f"DFS_{transporte.nome}", caminho, custo_total)
                 except ValueError as e:
                     print(e)
@@ -243,16 +209,13 @@ def main():
             for transporte in transportes:
                 try:
                     caminho, custo_total = gg.procura_BFS(inicio, transporte, lista_prioridades)
-                    # Salvar resultados no ficheiro
                     guardar_resultados(f"BFS_{transporte.nome}", caminho, custo_total)
                 except ValueError as e:
                     print(e)
             input("Pressione Enter para continuar...")
-
         elif saida == 6:
             try:
                 caminho, custo_total = gg.a_star()
-                # Salvar resultados no ficheiro
                 guardar_resultados("A*", caminho, custo_total)
             except ValueError as e:
                 print(e)
@@ -261,11 +224,10 @@ def main():
             caminho, custo_total = gg.custo_uniforme()
             print(caminho)
             print(custo_total)
-            # Salvar resultados no ficheiro
             guardar_resultados("Custo_Uniforme", caminho, custo_total)
             l = input("prima enter para continuar")
         elif saida == 8:
-            inicio = "Centro"  # Nó inicial
+            inicio = "Centro"
             transportes = [Carro(), Moto(), Helicoptero(), Drone()]
             for transporte in transportes:
                 try:
@@ -273,13 +235,12 @@ def main():
                     caminho, custo_total = g.procura_greedy(inicio, transporte)
                     print(f"Caminho: {caminho}")
                     print(f"Custo Total: {custo_total}")
-                    # Salvar resultados no ficheiro
                     guardar_resultados(f"Greedy_{transporte.nome}", caminho, custo_total)
                 except ValueError as e:
                     print(e)
             input("Pressione Enter para continuar...")
         elif saida == 9:
-            nodo = input ("Localidade a alterar: ")
+            nodo = input("Localidade a alterar: ")
             prioridade = input("Novo valor para prioridade (ou pressione Enter para ignorar): ")
             acessibilidade = input("Novo valor para acessibilidade do terreno (ou pressione Enter para ignorar): ")
             clima = input("Novo valor para condiçoes de clima (ou pressione Enter para ignorar): ")
@@ -297,12 +258,9 @@ def main():
                 print(e)
 
             l = input("Pressione Enter para continuar...")
-
-
         else:
             print("you didn't add anything")
             l = input("Pressione Enter para continuar...")
-
 
 if __name__ == "__main__":
     main()
