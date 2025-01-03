@@ -275,92 +275,109 @@ class Grafo:
 
 
 
-	def procura_DFS_prioritario(self, inicio, transporte):
-   
+	def procura_DFS(self, inicio, transporte, objetivos):
 		if inicio not in self.m_nodos:
 			raise ValueError(f"Nó '{inicio}' não existe no grafo.")
+		for objetivo in objetivos:
+			if objetivo not in self.m_nodos:
+				raise ValueError(f"Nó objetivo '{objetivo}' não existe no grafo.")
 
-		# Criar lista de nodos ordenados por prioridade decrescente
-		objetivos = sorted(
-			[(nodo, atributos["prioridade"]) for nodo, atributos in self.m_nodos.items() if atributos["prioridade"] > 0],
-			key=lambda x: x[1],
-			reverse=True
-		)
-		objetivos = [nodo for nodo, _ in objetivos]
-
-		print(f"Lista inicial de objetivos ordenados por prioridade: {objetivos}")
-
-		visitados = set()
 		caminho_total = []
 		custo_total = 0
+		tempo_total = 0  # Inicializa o tempo total
 
-		def dfs_recursivo(atual):
-			nonlocal custo_total
+		pontos = [inicio] + objetivos  # Cria uma lista que começa no início e inclui os objetivos
+		i = 0  # Índice para iterar sobre a lista de pontos
+		while i < len(pontos) - 1:
+			ponto_atual = pontos[i]
+			ponto_objetivo = pontos[i + 1]
 
-			# Verificar se há objetivos restantes
-			if not objetivos:
-				print("Todos os objetivos foram visitados.")
-				return
+			if ponto_atual not in objetivos and ponto_atual != inicio:
+				i += 1
+				continue
 
-			# Atualizar o objetivo atual
-			objetivo_atual = objetivos[0]
+			if ponto_objetivo not in objetivos:
+				i += 1
+				continue
 
-			print(f"Iniciando DFS de '{atual}' para '{objetivo_atual}'...")
+			# Encontrar o caminho entre os dois pontos usando DFS
+			caminho_otimo = self.encontrar_caminho_DFS(ponto_atual, ponto_objetivo)
+			if not caminho_otimo:
+				break
 
-			pilha = [(atual, 0)]  # Pilha com (nó, custo acumulado)
+			# Percorrer o caminho encontrado
+			for j in range(len(caminho_otimo) - 1):
+				atual = caminho_otimo[j]
+				proximo = caminho_otimo[j + 1]
 
-			while pilha:
-				nodo_atual, custo_atual = pilha.pop()
+				# Reduz o TTL e atualiza o custo
+				self.m_nodos[atual]["TTL"] -= 1
+				if self.m_nodos[atual]["TTL"] <= 0:
+					continue
 
-				if nodo_atual not in visitados:
-					visitados.add(nodo_atual)
-					caminho_total.append(nodo_atual)
-					print(f"Visitando nó: {nodo_atual}, custo acumulado: {custo_atual}")
+				distancia = self.calcular_distancia(atual, proximo)
+				if distancia > transporte.autonomia:
+					if self.m_nodos[atual].get("reabastecimento", False):
+						tr.Transporte.abastecer(transporte)
+						tempo_total += 0.1
+						custo_total += 10
+					else:
+						break
 
-					# Processar vizinhos
-					vizinhos = self.m_grafo.get(nodo_atual, [])
-					vizinho_prioritario = max(
-						[viz for viz in vizinhos if viz[0] not in visitados],
-						key=lambda x: self.m_nodos[x[0]]["prioridade"],
-						default=None
-					)
+				tr.Transporte.viajar(transporte, distancia)
+				custo_total += distancia
+				tempo_viagem = distancia / transporte.velocidade  # Calcula o tempo da viagem
+				tempo_total += tempo_viagem  # Acumula o tempo total
 
-					if vizinho_prioritario is None:
-						print(f"Sem vizinhos prioritários disponíveis para o nó '{nodo_atual}'.")
-						continue
+			# Adiciona o caminho ao caminho total sem duplicações consecutivas
+			for nodo in caminho_otimo:
+				if not caminho_total or caminho_total[-1] != nodo:
+					caminho_total.append(nodo)
 
-					vizinho, peso = vizinho_prioritario
-					distancia = self.calcular_distancia(nodo_atual, vizinho)
+			# Atender o objetivo
+			if ponto_objetivo in self.m_nodos and self.m_nodos[ponto_objetivo]["alimentos"] > 0:
+				tr.Transporte.descarregar(transporte, self.m_nodos[ponto_objetivo]["alimentos"])
+				custo_total += 15
+				tempo_total += 0.5
+				self.m_nodos[ponto_objetivo]["alimentos"] = 0
+				self.m_nodos[ponto_objetivo]["prioridade"] = 0
+			
+			if self.m_nodos[ponto_objetivo]["supply_refill"] == True:
+				tr.Transporte.carregar(transporte)
 
-					# Verificar autonomia e reabastecimento
-					if distancia > transporte.autonomia:
-						if self.m_nodos[nodo_atual].get("reabastecimento", False):
-							print(f"Reabastecendo transporte no nó '{nodo_atual}'.")
-							transporte.abastecer()
-						else:
-							print(f"Nó '{nodo_atual}' não permite reabastecimento. Nó ignorado.")
-							continue
+			# Avança para o próximo ponto
+			i += 1
 
-					# Usar o transporte para o próximo nó
-					transporte.viajar(distancia)
-					custo_total += distancia
-					pilha.append((vizinho, custo_atual + distancia))
+		tempo_total = (tempo_total * 60) / 100
+		print(f"Caminho total percorrido: {caminho_total}")
+		print(f"Custo total acumulado: {custo_total:.3f}")
+		print(f"Tempo total acumulado: {tempo_total:.2f} horas")
+		return caminho_total, round(custo_total, 3), tempo_total
 
-				# Se alcançamos o objetivo atual, remove-o da lista e reinicia
-				if nodo_atual == objetivo_atual:
-					print(f"Objetivo '{objetivo_atual}' alcançado!")
-					objetivos.pop(0)  # Remove o objetivo alcançado
-					print(f"Objetivos restantes: {objetivos}")
-					print(f"Nodos visitados até agora: {list(visitados)}")
-					dfs_recursivo(nodo_atual)  # Chamada recursiva para o próximo objetivo
-					break
 
-		dfs_recursivo(inicio)
+	def encontrar_caminho_DFS(self, inicio, objetivo):
+		"""
+		Encontra o caminho mais curto entre dois nós usando DFS.
+		Retorna o caminho como uma lista de nós ou None se não houver caminho.
+		"""
+		visitados = set()
+		pilha = [(inicio, [inicio])]  # Pilha com (nó atual, caminho percorrido)
 
-		print(f"\nCaminho total percorrido pelo transporte '{transporte.nome}': {caminho_total}")
-		print(f"Custo total pelo transporte '{transporte.nome}': {custo_total}")
+		while pilha:
+			atual, caminho = pilha.pop()
 
-		return caminho_total, custo_total
+			if atual == objetivo:
+				return caminho
+
+			if atual not in visitados:
+				visitados.add(atual)
+
+				for vizinho, peso in self.m_grafo.get(atual, []):  # Apenas vizinhos conectados
+					if vizinho not in visitados:
+						pilha.append((vizinho, caminho + [vizinho]))
+
+		return None  # Caminho não encontrado
+
 
 			
 

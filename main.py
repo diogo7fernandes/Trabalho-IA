@@ -217,47 +217,20 @@ def main():
             print(gg.imprimir_stats_nodos())
             l = input("Pressione Enter para continuar...")
         elif saida == 4:
-            # Instanciar os transportes
+            inicio = "Centro"
             transportes = [
                 Carro(),
                 Moto(),
                 Helicoptero(),
                 Drone()
             ]
-
-            caminhos_totais = {}
-            custos_totais = {}
-
             for transporte in transportes:
-                print(f"\nExecutando DFS para o transporte '{transporte.nome}'...")
                 try:
-                    inicio = "Centro"  # Define o nó inicial para cada transporte
-
-                    # Executar o método de busca DFS
-                    caminho, custo_total = gg.procura_DFS_prioritario(inicio, transporte)
-
-                    # Salvar resultados
-                    caminhos_totais[transporte.nome] = caminho
-                    custos_totais[transporte.nome] = custo_total
-
+                    caminho, custo_total = gg.procura_DFS(inicio, transporte, lista_prioridades)
                     # Salvar resultados no ficheiro
                     guardar_resultados(f"DFS_{transporte.nome}", caminho, custo_total)
-
-                    # Exibir resultados intermediários
-                    print(f"\nResultados parciais para o transporte '{transporte.nome}':")
-                    print(f"Caminho percorrido: {caminho}")
-                    print(f"Custo total acumulado: {custo_total}")
-
                 except ValueError as e:
-                    print(f"Erro ao processar transporte '{transporte.nome}': {e}")
-
-            # Imprimir resultados finais para todos os transportes
-            print("\nResultados Finais:")
-            for transporte in transportes:
-                print(f"\nTransporte: {transporte.nome}")
-                print(f"Caminho percorrido: {caminhos_totais.get(transporte.nome, [])}")
-                print(f"Custo total: {custos_totais.get(transporte.nome, 0)}")
-            
+                    print(e)
             input("Pressione Enter para continuar...")
         elif saida == 5:
             inicio = "Centro"
