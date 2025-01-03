@@ -177,87 +177,66 @@ class Grafo:
 		caminho_total = []
 		custo_total = 0
 
-		# Iniciar o percurso
 		pontos = [inicio] + objetivos  # Cria uma lista que começa no início e inclui os objetivos
 		i = 0  # Índice para iterar sobre a lista de pontos
 		while i < len(pontos) - 1:
 			ponto_atual = pontos[i]
 			ponto_objetivo = pontos[i + 1]
 
-			# Verifica se o ponto_atual ou o ponto_objetivo foram removidos
 			if ponto_atual not in objetivos and ponto_atual != inicio:
-				print(f"Nó '{ponto_atual}' foi removido da lista de objetivos. Pulando BFS.")
 				i += 1
-				continue
+				continue													
 
 			if ponto_objetivo not in objetivos:
-				print(f"Nó '{ponto_objetivo}' foi removido da lista de objetivos. Pulando BFS.")
 				i += 1
 				continue
 
-			print(f"Iniciando BFS de '{ponto_atual}' para '{ponto_objetivo}'...")
+			print(f"Iniciando percurso de '{ponto_atual}' para '{ponto_objetivo}'...")
 
-			visitados = set()
-			fila = [(ponto_atual, 0)]  # Fila com (nó, custo acumulado)
-			caminho_parcial = []
+			# Encontrar o caminho entre os dois pontos
+			caminho_otimo = self.encontrar_caminho(ponto_atual, ponto_objetivo)
+			if not caminho_otimo:
+				print(f"Não foi possível encontrar um caminho de '{ponto_atual}' para '{ponto_objetivo}'.")
+				break
 
-			while fila:
-				atual, custo_atual = fila.pop(0)
+			print(f"Caminho encontrado: {caminho_otimo}")
 
-				if atual not in visitados:
-					# Reduz o TTL do nó atual
-					self.m_nodos[atual]["TTL"] -= 1
-					if self.m_nodos[atual]["TTL"] <= 0:
-						continue
+			# Percorrer o caminho encontrado
+			for j in range(len(caminho_otimo) - 1):
+				atual = caminho_otimo[j]
+				proximo = caminho_otimo[j + 1]
 
-					visitados.add(atual)
-					caminho_parcial.append(atual)  # Adiciona o nó atual ao caminho parcial
+				# Reduz o TTL e atualiza o custo
+				self.m_nodos[atual]["TTL"] -= 1
+				if self.m_nodos[atual]["TTL"] <= 0:
+					print(f"Nó '{atual}' tornou-se inacessível (TTL esgotado).")
 
-					# Verificar a necessidade de alimentos no nó atual
-					if self.m_nodos[atual]["alimentos"] > 0:
-						tr.Transporte.descarregar(transporte, self.m_nodos[atual]["alimentos"])
+				distancia = self.calcular_distancia(atual, proximo)
+				if distancia > transporte.autonomia:
+					if self.m_nodos[atual].get("reabastecimento", False):
+						tr.Transporte.abastecer(transporte)
 						custo_total += 1
-
-						self.m_nodos[atual]["alimentos"] = max(0, self.m_nodos[atual]["alimentos"] - transporte.alimentos)
-
-						# Se os alimentos chegam a zero, atualiza a prioridade e remove o objetivo
-						if self.m_nodos[atual]["alimentos"] == 0:
-							self.m_nodos[atual]["prioridade"] = 0  # Zera a prioridade do nó
-							if atual in objetivos:
-								objetivos.remove(atual)
-								print(f"Nó '{atual}' foi removido da lista de objetivos após atender suas necessidades.")
-
-						# Reabastecer o transporte se necessário
-						if self.m_nodos[atual]["supply_refill"]:
-							tr.Transporte.carregar(transporte)
-							custo_total += 1
-
-					# Verificar se o objetivo atual foi alcançado
-					if atual == ponto_objetivo:
-						print(f"Nó objetivo '{ponto_objetivo}' alcançado!")
+						print(f"Reabastecendo no nó '{atual}'.")
+					else:
+						print(f"Nó '{atual}' não permite reabastecimento. Interrompendo.")
 						break
 
-					# Tentar alcançar vizinhos que possuem uma ligação com o nó atual
-					for vizinho, peso in self.m_grafo.get(atual, []):
-						if vizinho not in visitados:
-							if self.m_nodos[vizinho]["TTL"] <= 0:
-								continue
+				tr.Transporte.viajar(transporte, distancia)
+				custo_total += distancia
+				print(f"Viajando de '{atual}' para '{proximo}'. Distância: {distancia:.2f}")
 
-							distancia = self.calcular_distancia(atual, vizinho)
-							if distancia > transporte.autonomia:
-								atributos = self.m_nodos[atual]
-								if atributos["reabastecimento"]:
-									tr.Transporte.abastecer(transporte)
-									custo_total += 1
-								else:
-									continue
+			# Adiciona o caminho ao caminho total sem duplicações consecutivas
+			for nodo in caminho_otimo:
+				if not caminho_total or caminho_total[-1] != nodo:
+					caminho_total.append(nodo)
 
-							tr.Transporte.viajar(transporte, distancia)
-							custo_total += distancia
-							fila.append((vizinho, custo_atual + distancia))
-
-			# Adiciona o caminho parcial ao caminho total
-			caminho_total.extend(caminho_parcial)  # Preserva o percurso completo
+			# Atender o objetivo
+			if ponto_objetivo in self.m_nodos and self.m_nodos[ponto_objetivo]["alimentos"] > 0:
+				tr.Transporte.descarregar(transporte, self.m_nodos[ponto_objetivo]["alimentos"])
+				custo_total += 1
+				print(f"Atendendo as necessidades de '{ponto_objetivo}'.")
+				self.m_nodos[ponto_objetivo]["alimentos"] = 0
+				self.m_nodos[ponto_objetivo]["prioridade"] = 0
 
 			# Avança para o próximo ponto
 			i += 1
@@ -265,6 +244,31 @@ class Grafo:
 		print(f"Caminho total percorrido: {caminho_total}")
 		print(f"Custo total acumulado: {custo_total}")
 		return caminho_total, custo_total
+
+
+	def encontrar_caminho(self, inicio, objetivo):
+		"""
+		Encontra o caminho mais curto entre dois nós usando BFS.
+		Retorna o caminho como uma lista de nós ou None se não houver caminho.
+		"""
+		visitados = set()
+		fila = [(inicio, [inicio])]  # Fila com (nó atual, caminho percorrido)
+
+		while fila:
+			atual, caminho = fila.pop(0)
+
+			if atual == objetivo:
+				return caminho
+
+			if atual not in visitados:
+				visitados.add(atual)
+
+				for vizinho, peso in self.m_grafo.get(atual, []):  # Apenas vizinhos conectados
+					if vizinho not in visitados:
+						fila.append((vizinho, caminho + [vizinho]))
+
+		return None  # Caminho não encontrado
+
 
 
 

@@ -138,8 +138,6 @@ def main():
 	g.adicionar_aresta("Amares", "Povoa de Lanhoso")
 	g.adicionar_aresta("Povoa de Lanhoso", "Amares")
 	
-
-
 	saida = -1
 	while saida != 0:
 		print("(1) Imprimir Grafo")
@@ -153,7 +151,22 @@ def main():
 		print("(9) Modificar situação de localidade")
 		print("(0) Sair")
 
-		saida = int(input("Introduza a sua opcao -> "))
+		try:
+			user_input = input("Introduza a sua opcao -> ")
+			if user_input.strip() == "":
+				print("Por favor, introduza um número entre 0 e 9")
+				input("Pressione Enter para continuar...")
+				continue
+			saida = int(user_input)
+			if saida < 0 or saida > 9:
+				print("Por favor, introduza um número entre 0 e 9")
+				input("Pressione Enter para continuar...")
+				continue
+		except ValueError:
+			print("Por favor, introduza um número válido entre 0 e 9")
+			input("Pressione Enter para continuar...")
+			continue
+        
 		if saida == 0:
 			print("Saindo.......")
 		elif saida == 1:
@@ -255,7 +268,7 @@ def main():
 				print(e)
 
 			l = input("Pressione Enter para continuar...")
-	   
+		
 
 		else:
 			print("you didn't add anything")
