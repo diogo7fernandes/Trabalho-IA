@@ -258,7 +258,7 @@ def main():
             for transporte in transportes:
                 try:
                     print(f"Executando Greedy para o transporte '{transporte.nome}'...")
-                    caminho, custo_total = g.procura_greedy(inicio, transporte)
+                    caminho, custo_total = gg.procura_greedy(inicio, transporte, lista_prioridades)
                     print(f"Caminho: {caminho}")
                     print(f"Custo Total: {custo_total}")
                     guardar_resultados(f"Greedy_{transporte.nome}", caminho, custo_total)

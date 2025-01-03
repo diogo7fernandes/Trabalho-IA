@@ -412,6 +412,11 @@ class Grafo:
                     break
 
                 for vizinho, peso in self.m_grafo.get(atual, []):
+                    # Verifica se o transporte pode operar na acessibilidade do vizinho
+                    acessibilidade = self.m_nodos[vizinho].get("acessibilidade", None)
+                    if acessibilidade is None or not transporte.pode_operar(acessibilidade):
+                        continue  # Ignorar este vizinho
+
                     if vizinho not in visitados:
                         g_vizinho = g_atual + peso
                         h_vizinho = self.calcular_heuristica(vizinho, ponto_objetivo)  # Heurística
@@ -465,46 +470,121 @@ class Grafo:
         print(f"Custo total acumulado: {custo_total:.3f}")
         print(f"Tempo total acumulado: {tempo_total:.2f} horas")
         return caminho_total, round(custo_total, 3), tempo_total
+
             
-    def procura_greedy(self, inicio, transporte):
+    def procura_greedy(self, inicio, transporte, lista_prioridades):
+        
         if inicio not in self.m_nodos:
             raise ValueError(f"Nó '{inicio}' não existe no grafo.")
+        for objetivo in lista_prioridades:
+            if objetivo not in self.m_nodos:
+                raise ValueError(f"Nó objetivo '{objetivo}' não existe no grafo.")
 
-        visitados = set()
-        fila_prioridade = [(0, inicio)]
-        caminho = []
+        caminho_total = []
         custo_total = 0
+        tempo_total = 0
+        lista_prioridades = lista_prioridades[:]  # Criação de uma cópia da lista de prioridades
 
-        while fila_prioridade:
-            _, atual = heapq.heappop(fila_prioridade)
+        while lista_prioridades:
+            objetivo_atual = lista_prioridades[0]  # Primeiro objetivo da lista
+            print(f"\nIniciando busca de '{inicio}' para '{objetivo_atual}'.")
 
-            if atual in visitados:
-                continue
+            fila_prioridade = [(0, inicio)]
+            visitados = set()
+            objetivo_alcancavel = False
 
-            visitados.add(atual)
-            caminho.append(atual)
-            print(f"Visitando nó: {atual}")
+            while fila_prioridade:
+                _, atual = heapq.heappop(fila_prioridade)
 
-            for vizinho, peso in self.m_grafo.get(atual, []):
-                if vizinho not in visitados:
-                    distancia = self.calcular_distancia(atual, vizinho)
+                if atual in visitados:
+                    continue
 
-                    if distancia > transporte.autonomia:
-                        atributos = self.m_nodos[atual]
-                        if atributos["reabastecimento"]:
-                            transporte.abastecer()
-                            custo_total += 1
-                            print(f"Reabastecendo em '{atual}' para continuar.")
-                        else:
+                visitados.add(atual)
+
+                # Adicionar ao caminho, evitando repetições consecutivas
+                if not caminho_total or caminho_total[-1] != atual:
+                    caminho_total.append(atual)
+
+                print(f"Visitando nó: {atual}")
+
+                # Suprimir necessidades de nós intermediários
+                if self.m_nodos[atual]["alimentos"] > 0:
+                    alimentos_necessarios = self.m_nodos[atual]["alimentos"]
+                    self.m_nodos[atual]["alimentos"] = tr.Transporte.descarregar(transporte, alimentos_necessarios)
+                    custo_total += 15  # Incrementa o custo para descarregar alimentos
+                    tempo_total += 0.5
+
+                # Recarregar alimentos no transporte, se permitido no nó
+                if transporte.alimentos < transporte.capacidade and self.m_nodos[atual]["supply_refill"] is True:
+                    tr.Transporte.carregar(transporte)
+                    custo_total += 10
+                    tempo_total += 0.3
+                    print(f"Reabastecimento de alimentos realizado no nó '{atual}'.")
+
+                # Se o objetivo atual for alcançado
+                if atual == objetivo_atual:
+                    objetivo_alcancavel = True
+                    print(f"Objetivo '{objetivo_atual}' alcançado!")
+                    # Satisfazendo as necessidades de alimentos do objetivo antes de removê-lo
+                    if self.m_nodos[atual]["alimentos"] > 0:
+                        alimentos_necessarios = self.m_nodos[atual]["alimentos"]
+                        self.m_nodos[atual]["alimentos"] = tr.Transporte.descarregar(transporte, alimentos_necessarios)
+                        custo_total += 15
+                        tempo_total += 0.5
+                        print(f"Necessidades de alimentos satisfeitas no objetivo '{objetivo_atual}'.")
+                    lista_prioridades.pop(0)  # Remove o objetivo atual da lista
+                    inicio = atual  # Atualiza o início para o próximo ciclo
+                    break
+
+                # Explorar vizinhos conectados com validação de caminho possível
+                for vizinho, peso in self.m_grafo.get(atual, []):
+                    # Verificar se existe um caminho válido utilizando o método encontrar_caminho
+                    caminho_possivel = self.encontrar_caminho(atual, vizinho)
+                    if not caminho_possivel:
+                        print(f"Nó '{vizinho}' não é acessível a partir de '{atual}'. Ignorando.")
+                        continue
+
+                    # Certificar que o vizinho está conectado diretamente ao atual
+                    if vizinho not in [nodo for nodo, _ in self.m_grafo.get(atual, [])]:
+                        print(f"Nó '{vizinho}' não está conectado a '{atual}'. Ignorando.")
+                        continue
+
+                    if vizinho not in visitados:
+                        distancia = self.calcular_distancia(atual, vizinho)
+
+                        # Verificar se o transporte pode acessar o vizinho
+                        acessibilidade = self.m_nodos[vizinho]["acessibilidade"]
+                        if not tr.Transporte.transporte_pode(transporte, acessibilidade):
+                            print(f"Transporte '{transporte.nome}' não pode acessar o nó '{vizinho}'.")
                             continue
 
-                    transporte.viajar(distancia)
-                    custo_total += distancia
+                        # Verificar autonomia e reabastecer, se permitido no nó
+                        if distancia > transporte.autonomia:
+                            if self.m_nodos[atual]["reabastecimento"] is True:
+                                tr.Transporte.abastecer(transporte)
+                                tempo_total += 0.1
+                                custo_total += 10
+                                print(f"Reabastecimento de combustível realizado no nó '{atual}'.")
+                            else:
+                                print(f"Nó '{atual}' não permite reabastecimento. Ignorando '{vizinho}'.")
+                                continue
 
-                    h_custo = self.calcular_heuristica(vizinho, inicio)
-                    print(f"Heurística para nó '{vizinho}': {h_custo}")
-                    heapq.heappush(fila_prioridade, (h_custo, vizinho))
+                        tr.Transporte.viajar(transporte, distancia)
+                        custo_total += distancia
+                        tempo_viagem = distancia / transporte.velocidade
+                        tempo_total += tempo_viagem
 
-        print(f"Caminho percorrido: {caminho}")
-        print(f"Custo total: {custo_total}")
-        return caminho, custo_total
+                        # Calcular heurística e adicionar à fila
+                        h_custo = self.calcular_heuristica(vizinho, objetivo_atual)
+                        heapq.heappush(fila_prioridade, (h_custo, vizinho))
+
+            # Caso o objetivo não seja alcançável, removê-lo da lista
+            if not objetivo_alcancavel:
+                print(f"Objetivo '{objetivo_atual}' não é alcançável. Removendo da lista de prioridades.")
+                lista_prioridades.pop(0)
+
+            tempo_total = (tempo_total * 60) / 100
+            print(f"\nCaminho total percorrido: {caminho_total}")
+            print(f"Custo total acumulado: {custo_total:.3f}")
+            print(f"Tempo total acumulado: {tempo_total:.2f} horas")
+        return caminho_total, round(custo_total, 3), tempo_total
