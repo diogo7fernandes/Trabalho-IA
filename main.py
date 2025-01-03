@@ -249,10 +249,12 @@ def main():
             for transporte in transportes:
                 try:
                     print(f"Executando Greedy para o transporte '{transporte.nome}'...")
-                    caminho, custo_total = gg.procura_greedy(inicio, transporte, lista_prioridades)
-                    print(f"Caminho: {caminho}")
-                    print(f"Custo Total: {custo_total}")
-                    guardar_resultados(f"Greedy_{transporte.nome}", caminho, custo_total)
+                    caminho, custo_total, tempo_total = gg.procura_greedy(inicio, transporte, lista_prioridades)
+                    print(f"[Greedy - {transporte.nome}]")
+                    print(f"Caminho encontrado: {caminho}")
+                    print(f"Custo total: {custo_total}")
+                    print(f"Tempo total: {tempo_total:.2f} horas")
+                    guardar_resultados(f"Greedy_{transporte.nome}", caminho, custo_total, tempo_total)
                 except ValueError as e:
                     print(e)
             input("Pressione Enter para continuar...")
