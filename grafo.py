@@ -176,6 +176,7 @@ class Grafo:
 
 		caminho_total = []
 		custo_total = 0
+		tempo_total = 0  # Inicializa o tempo total
 
 		pontos = [inicio] + objetivos  # Cria uma lista que começa no início e inclui os objetivos
 		i = 0  # Índice para iterar sobre a lista de pontos
@@ -185,21 +186,16 @@ class Grafo:
 
 			if ponto_atual not in objetivos and ponto_atual != inicio:
 				i += 1
-				continue													
+				continue
 
 			if ponto_objetivo not in objetivos:
 				i += 1
 				continue
 
-			print(f"Iniciando percurso de '{ponto_atual}' para '{ponto_objetivo}'...")
-
 			# Encontrar o caminho entre os dois pontos
 			caminho_otimo = self.encontrar_caminho(ponto_atual, ponto_objetivo)
 			if not caminho_otimo:
-				print(f"Não foi possível encontrar um caminho de '{ponto_atual}' para '{ponto_objetivo}'.")
 				break
-
-			print(f"Caminho encontrado: {caminho_otimo}")
 
 			# Percorrer o caminho encontrado
 			for j in range(len(caminho_otimo) - 1):
@@ -209,21 +205,22 @@ class Grafo:
 				# Reduz o TTL e atualiza o custo
 				self.m_nodos[atual]["TTL"] -= 1
 				if self.m_nodos[atual]["TTL"] <= 0:
-					print(f"Nó '{atual}' tornou-se inacessível (TTL esgotado).")
+					continue
 
 				distancia = self.calcular_distancia(atual, proximo)
 				if distancia > transporte.autonomia:
 					if self.m_nodos[atual].get("reabastecimento", False):
 						tr.Transporte.abastecer(transporte)
-						custo_total += 1
-						print(f"Reabastecendo no nó '{atual}'.")
+						tempo_total += 0.1
+						custo_total += 10
 					else:
-						print(f"Nó '{atual}' não permite reabastecimento. Interrompendo.")
 						break
 
 				tr.Transporte.viajar(transporte, distancia)
 				custo_total += distancia
-				print(f"Viajando de '{atual}' para '{proximo}'. Distância: {distancia:.2f}")
+				tempo_viagem = distancia / transporte.velocidade  # Calcula o tempo da viagem
+				tempo_total += tempo_viagem  # Acumula o tempo total
+
 
 			# Adiciona o caminho ao caminho total sem duplicações consecutivas
 			for nodo in caminho_otimo:
@@ -233,17 +230,22 @@ class Grafo:
 			# Atender o objetivo
 			if ponto_objetivo in self.m_nodos and self.m_nodos[ponto_objetivo]["alimentos"] > 0:
 				tr.Transporte.descarregar(transporte, self.m_nodos[ponto_objetivo]["alimentos"])
-				custo_total += 1
-				print(f"Atendendo as necessidades de '{ponto_objetivo}'.")
+				custo_total += 15
+				tempo_total += 0.5
 				self.m_nodos[ponto_objetivo]["alimentos"] = 0
 				self.m_nodos[ponto_objetivo]["prioridade"] = 0
+			
+			if self.m_nodos[ponto_objetivo]["supply_refill"] == True:
+				tr.Transporte.carregar(transporte)
+
 
 			# Avança para o próximo ponto
 			i += 1
-
+		tempo_total = (tempo_total*60)/100
 		print(f"Caminho total percorrido: {caminho_total}")
-		print(f"Custo total acumulado: {custo_total}")
-		return caminho_total, custo_total
+		print(f"Custo total acumulado: {custo_total:.3f}")
+		print(f"Tempo total acumulado: {tempo_total:.2f} horas")
+		return caminho_total, round(custo_total, 3), tempo_total
 
 
 	def encontrar_caminho(self, inicio, objetivo):

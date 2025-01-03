@@ -3,6 +3,7 @@ from grafo import Grafo
 import random
 from transporte import Carro, Moto, Helicoptero, Drone
 import os
+import copy
 
 sys.path.append(".")  # Adiciona o diretório atual ao PYTHONPATH
 
@@ -69,6 +70,26 @@ def main():
         return [nodo for nodo, _ in prioridades_ordenadas]
 
     lista_prioridades = organizar_prioridade(g)
+
+    def copiar_grafo(grafo_original):
+        """
+        Faz uma cópia profunda do grafo, garantindo que alterações na cópia 
+        não afetem o grafo original.
+
+        Args:
+            grafo_original (Grafo): O grafo original a ser copiado.
+
+        Returns:
+            Grafo: Uma nova instância do grafo copiada.
+        """
+            # Criar uma nova instância da classe Grafo
+        grafo_copiado = Grafo()
+
+        # Copiar os nós e as arestas de forma independente
+        grafo_copiado.m_nodos = copy.deepcopy(grafo_original.m_nodos)
+        grafo_copiado.m_grafo = copy.deepcopy(grafo_original.m_grafo)
+
+        return grafo_copiado
 
     g.adicionar_aresta("Esposende", "Barcelos")
     g.adicionar_aresta("Barcelos", "Esposende")
@@ -167,6 +188,8 @@ def main():
         print("(9) Modificar situação de localidade")
         print("(0) Sair")
 
+        gg = copiar_grafo(g)
+
         try:
             user_input = input("Introduza a sua opcao -> ")
             if user_input.strip() == "":
@@ -191,7 +214,7 @@ def main():
         elif saida == 2:
             g.desenha()
         elif saida == 3:
-            print(g.imprimir_stats_nodos())
+            print(gg.imprimir_stats_nodos())
             l = input("Pressione Enter para continuar...")
         elif saida == 4:
             # Instanciar os transportes
@@ -211,7 +234,7 @@ def main():
                     inicio = "Centro"  # Define o nó inicial para cada transporte
 
                     # Executar o método de busca DFS
-                    caminho, custo_total = g.procura_DFS_prioritario(inicio, transporte)
+                    caminho, custo_total = gg.procura_DFS_prioritario(inicio, transporte)
 
                     # Salvar resultados
                     caminhos_totais[transporte.nome] = caminho
@@ -238,10 +261,15 @@ def main():
             input("Pressione Enter para continuar...")
         elif saida == 5:
             inicio = "Centro"
-            transportes = [Carro()]
+            transportes = [
+                Carro(),
+                Moto(),
+                Helicoptero(),
+                Drone()
+            ]
             for transporte in transportes:
                 try:
-                    caminho, custo_total = g.procura_BFS(inicio, transporte, lista_prioridades)
+                    caminho, custo_total = gg.procura_BFS(inicio, transporte, lista_prioridades)
                     # Salvar resultados no ficheiro
                     guardar_resultados(f"BFS_{transporte.nome}", caminho, custo_total)
                 except ValueError as e:
@@ -250,14 +278,14 @@ def main():
 
         elif saida == 6:
             try:
-                caminho, custo_total = g.a_star()
+                caminho, custo_total = gg.a_star()
                 # Salvar resultados no ficheiro
                 guardar_resultados("A*", caminho, custo_total)
             except ValueError as e:
                 print(e)
             input("Pressione Enter para continuar...")
         elif saida == 7:
-            caminho, custo_total = g.custo_uniforme()
+            caminho, custo_total = gg.custo_uniforme()
             print(caminho)
             print(custo_total)
             # Salvar resultados no ficheiro
