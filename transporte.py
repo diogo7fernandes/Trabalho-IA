@@ -34,9 +34,9 @@ class Transporte:
     def transporte_pode(self,acessibilidade):
         if isinstance(self, Carro) and (0 <= acessibilidade <= 5):
             return True
-        elif isinstance(self, Moto) and (3 <= acessibilidade <= 7):
+        elif isinstance(self, Moto) and (0 <= acessibilidade <= 7):
             return True
-        elif isinstance(self, Helicoptero) and (6 <= acessibilidade <= 10):
+        elif isinstance(self, Helicoptero) and (0 <= acessibilidade <= 10):
             return True
         elif isinstance(self, Drone) and  (0 <= acessibilidade <= 10):
             return True

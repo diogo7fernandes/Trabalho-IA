@@ -12,7 +12,7 @@ def guardar_resultados(nome_algoritmo, caminho, custo, tempo_execucao=None):
         arquivo.write(f"Caminho: {' -> '.join(map(str, caminho))}\n")
         arquivo.write(f"Custo total: {custo}\n")
         if tempo_execucao is not None:
-            arquivo.write(f"Tempo total: {tempo_execucao} horas\n")
+            arquivo.write(f"Tempo total: {tempo_execucao:.2f} horas\n")
 
 def main():
     g = Grafo()
@@ -187,8 +187,12 @@ def main():
             transportes = [Carro(), Moto(), Helicoptero(), Drone()]
             for transporte in transportes:
                 try:
-                    caminho, custo_total = gg.procura_DFS(inicio, transporte, lista_prioridades)
-                    guardar_resultados(f"DFS_{transporte.nome}", caminho, custo_total)
+                    caminho, custo_total, tempo_total = gg.procura_DFS(inicio, transporte, lista_prioridades)
+                    guardar_resultados(f"DFS_{transporte.nome}", caminho, custo_total, tempo_total)
+                    print(f"[DFS - {transporte.nome}]")
+                    print(f"Caminho encontrado: {caminho}")
+                    print(f"Custo total: {custo_total}")
+                    print(f"Tempo total: {tempo_total:.2f} horas")
                 except ValueError as e:
                     print(e)
             input("Pressione Enter para continuar...")
@@ -197,8 +201,12 @@ def main():
             transportes = [Carro(), Moto(), Helicoptero(), Drone()]
             for transporte in transportes:
                 try:
-                    caminho, custo_total = gg.procura_BFS(inicio, transporte, lista_prioridades)
-                    guardar_resultados(f"BFS_{transporte.nome}", caminho, custo_total)
+                    caminho, custo_total, tempo_total = gg.procura_BFS(inicio, transporte, lista_prioridades)
+                    guardar_resultados(f"BFS_{transporte.nome}", caminho, custo_total, tempo_total)
+                    print(f"[BFS - {transporte.nome}]")
+                    print(f"Caminho encontrado: {caminho}")
+                    print(f"Custo total: {custo_total}")
+                    print(f"Tempo total: {tempo_total:.2f} horas")
                 except ValueError as e:
                     print(e)
             input("Pressione Enter para continuar...")
@@ -227,14 +235,11 @@ def main():
             for transporte in transportes:
                 try:
                     print(f"Executando Custo Uniforme para o transporte '{transporte.nome}'...")
-                    resultado = gg.custo_uniforme(inicio, transporte, lista_prioridades)
-                    if resultado:
-                        caminho, custo_total = resultado
-                        print(f"Caminho: {caminho}")
-                        print(f"Custo Total: {custo_total}")
-                        guardar_resultados(f"CustoUniforme_{transporte.nome}", caminho, custo_total)
-                    else:
-                        print(f"Caminho não existe para o transporte '{transporte.nome}'.")
+                    caminho, custo_total, tempo_total = gg.custo_uniforme(inicio, transporte, lista_prioridades)
+                    print(f"Caminho: {caminho}")
+                    print(f"Custo Total: {custo_total}")
+                    print(f"Tempo Total: {tempo_total:.2f} horas")
+                    guardar_resultados(f"CustoUniforme_{transporte.nome}", caminho, custo_total, tempo_total)
                 except ValueError as e:
                     print(e)
             input("Pressione Enter para continuar...")
