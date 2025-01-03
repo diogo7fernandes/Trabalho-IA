@@ -6,14 +6,13 @@ import copy
 
 sys.path.append(".")
 
-def guardar_resultados(algoritmo, caminho, custo_total):
-    nome_ficheiro = f"resultados_{algoritmo}.txt"
-
-    with open(nome_ficheiro, "a") as ficheiro:
-        ficheiro.write(f"\nAlgoritmo: {algoritmo}\n")
-        ficheiro.write(f"Caminho percorrido: {caminho}\n")
-        ficheiro.write(f"Custo total: {custo_total}\n")
-        ficheiro.write("-" * 40 + "\n")
+def guardar_resultados(nome_algoritmo, caminho, custo, tempo_execucao=None):
+    with open(f"resultados_{nome_algoritmo}.txt", "w") as arquivo:
+        arquivo.write(f"Algoritmo: {nome_algoritmo}\n")
+        arquivo.write(f"Caminho: {' -> '.join(map(str, caminho))}\n")
+        arquivo.write(f"Custo total: {custo}\n")
+        if tempo_execucao is not None:
+            arquivo.write(f"Tempo total: {tempo_execucao} horas\n")
 
 def main():
     g = Grafo()
@@ -185,12 +184,7 @@ def main():
             l = input("Pressione Enter para continuar...")
         elif saida == 4:
             inicio = "Centro"
-            transportes = [
-                Carro(),
-                Moto(),
-                Helicoptero(),
-                Drone()
-            ]
+            transportes = [Carro(), Moto(), Helicoptero(), Drone()]
             for transporte in transportes:
                 try:
                     caminho, custo_total = gg.procura_DFS(inicio, transporte, lista_prioridades)
@@ -200,12 +194,7 @@ def main():
             input("Pressione Enter para continuar...")
         elif saida == 5:
             inicio = "Centro"
-            transportes = [
-                Carro(),
-                Moto(),
-                Helicoptero(),
-                Drone()
-            ]
+            transportes = [Carro(), Moto(), Helicoptero(), Drone()]
             for transporte in transportes:
                 try:
                     caminho, custo_total = gg.procura_BFS(inicio, transporte, lista_prioridades)
@@ -215,24 +204,12 @@ def main():
             input("Pressione Enter para continuar...")
         elif saida == 6:
             inicio = "Centro"
-            transportes = [
-                Carro(),
-                Moto(),
-                Helicoptero(),
-                Drone()
-            ]
-
+            transportes = [Carro(), Moto(), Helicoptero(), Drone()]
             try:
-
                 for transporte in transportes:
                     try:
-                        # Chamar o método procura_A_estrela
                         caminho, custo_total, tempo_total = gg.a_star(inicio, transporte, lista_prioridades)
-
-                        # Guardar os resultados
                         guardar_resultados(f"A*_{transporte.nome}", caminho, custo_total, tempo_total)
-
-                        # Exibir os resultados
                         print(f"[A* - {transporte.nome}]")
                         print(f"Caminho encontrado: {caminho}")
                         print(f"Custo total: {custo_total}")
@@ -244,14 +221,23 @@ def main():
             except ValueError as e:
                 print(e)
             input("Pressione Enter para continuar...")
-
-
         elif saida == 7:
-            caminho, custo_total = gg.custo_uniforme()
-            print(caminho)
-            print(custo_total)
-            guardar_resultados("Custo_Uniforme", caminho, custo_total)
-            l = input("prima enter para continuar")
+            inicio = "Centro"
+            transportes = [Carro(), Moto(), Helicoptero(), Drone()]
+            for transporte in transportes:
+                try:
+                    print(f"Executando Custo Uniforme para o transporte '{transporte.nome}'...")
+                    resultado = gg.custo_uniforme(inicio, transporte, lista_prioridades)
+                    if resultado:
+                        caminho, custo_total = resultado
+                        print(f"Caminho: {caminho}")
+                        print(f"Custo Total: {custo_total}")
+                        guardar_resultados(f"CustoUniforme_{transporte.nome}", caminho, custo_total)
+                    else:
+                        print(f"Caminho não existe para o transporte '{transporte.nome}'.")
+                except ValueError as e:
+                    print(e)
+            input("Pressione Enter para continuar...")
         elif saida == 8:
             inicio = "Centro"
             transportes = [Carro(), Moto(), Helicoptero(), Drone()]
