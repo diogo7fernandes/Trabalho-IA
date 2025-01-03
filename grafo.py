@@ -6,10 +6,10 @@ import os
 import json
 import subprocess
 import platform
-import transporte as tr
 import heapq
 import networkx as nx
 import matplotlib.pyplot as plt
+import transporte as tr
 
 class Grafo:
     
@@ -273,6 +273,85 @@ class Grafo:
             if not self.verificar_caminho_possivel(caminho[i], caminho[i+1], transporte):
                 return False
         return True
+
+    def atualizar_clima(self, nodo, novo_clima):
+        """
+        Atualiza as condições climáticas de um nodo.
+        Clima é representado em uma escala de 0 a 10:
+        0-3: Tempo bom
+        4-6: Chuva moderada
+        7-8: Tempestade
+        9-10: Tempestade severa
+        """
+        if nodo not in self.m_nodos:
+            raise ValueError(f"Nó '{nodo}' não existe no grafo.")
+        if not (0 <= novo_clima <= 10):
+            raise ValueError("Valor do clima deve estar entre 0 e 10")
+        
+        self.m_nodos[nodo]["clima"] = novo_clima
+
+    def calcular_tempo_viagem(self, origem, destino, transporte):
+        """
+        Calcula o tempo de viagem entre dois pontos considerando o clima.
+        Retorna o tempo em horas e um booleano indicando se é seguro viajar.
+        """
+        if origem not in self.m_nodos or destino not in self.m_nodos:
+            raise ValueError("Origem ou destino não existem no grafo")
+
+        clima_origem = self.m_nodos[origem].get("clima", 0)
+        clima_destino = self.m_nodos[destino].get("clima", 0)
+        clima_medio = (clima_origem + clima_destino) / 2
+        
+        # Verificar condições de segurança baseadas no tipo de transporte
+        if isinstance(transporte, Helicoptero):
+            if clima_medio >= 8:  # Helicoptero não voa em tempestades severas
+                return float('inf'), False
+        elif isinstance(transporte, Drone):
+            if clima_medio >= 7:  # Drone não voa em qualquer tempestade
+                return float('inf'), False
+        
+        # Calcular penalidade de tempo baseada no clima
+        penalidade_clima = 1.0  # fator multiplicador base
+        
+        if clima_medio <= 3:  # Tempo bom
+            penalidade_clima = 1.0
+        elif clima_medio <= 6:  # Chuva moderada
+            penalidade_clima = 1.3
+            if isinstance(transporte, Moto):  # Motos são mais afetadas pela chuva
+                penalidade_clima = 1.5
+        elif clima_medio <= 8:  # Tempestade
+            penalidade_clima = 1.6
+            if isinstance(transporte, Moto):
+                penalidade_clima = 2.0
+            elif isinstance(transporte, Carro):
+                penalidade_clima = 1.8
+        else:  # Tempestade severa
+            penalidade_clima = 2.0
+            if isinstance(transporte, Moto):
+                return float('inf'), False  # Muito perigoso para motos
+            elif isinstance(transporte, Carro):
+                penalidade_clima = 2.5
+        
+        distancia = self.calcular_distancia(origem, destino)
+        tempo_base = distancia / transporte.velocidade
+        tempo_final = tempo_base * penalidade_clima
+        
+        return tempo_final, True
+
+    def verificar_seguranca_clima(self, nodo, transporte):
+        """
+        Verifica se é seguro para o transporte operar no nodo dado as condições climáticas.
+        """
+        clima = self.m_nodos[nodo].get("clima", 0)
+        
+        if isinstance(transporte, Helicoptero):
+            return clima < 8
+        elif isinstance(transporte, Drone):
+            return clima < 7
+        elif isinstance(transporte, Moto):
+            return clima < 9
+        else:  # Carro
+            return True  # Carros podem operar em qualquer clima, apenas mais lentamente
     
     def procura_BFS(self, inicio, transporte, objetivos):
         if inicio not in self.m_nodos:
@@ -290,272 +369,249 @@ class Grafo:
         tempo_total = 0
         ponto_atual = inicio
         global_visitados = set()
+        tentativas_alternativas = 3  # Número de tentativas para encontrar rotas alternativas
 
         # Process objectives one by one
         for objetivo in objetivos:
             if not self.verificar_caminho_possivel(ponto_atual, objetivo, transporte):
-                print(f"Não existe caminho possível entre {ponto_atual} e {objetivo} para {transporte.nome}")
-                continue
-
-            if not transporte.transporte_pode(self.m_nodos[objetivo]["acessibilidade"]):
-                print(f"Transporte {transporte.nome} não pode acessar {objetivo}. Pulando...")
+                print(f"Não existe caminho possível entre {ponto_atual} e {objetivo}")
                 continue
 
             fila = [(ponto_atual, [ponto_atual])]
             visitados = set()
             caminho_encontrado = False
+            tentativas = tentativas_alternativas
 
-            while fila and not caminho_encontrado:
+            while fila and not caminho_encontrado and tentativas > 0:
                 atual, caminho = fila.pop(0)
 
                 if atual == objetivo:
                     if self.verificar_caminho_completo(caminho, transporte):
+                        rota_possivel = True
+                        tempo_rota_total = 0
+                        
+                        # Verificar toda a rota antes de confirmar
                         for j in range(len(caminho) - 1):
                             atual_nodo = caminho[j]
                             proximo_nodo = caminho[j + 1]
                             
-                            if atual_nodo not in objetivos:
-                                global_visitados.add(atual_nodo)
+                            # Verificar condições climáticas e calcular tempo
+                            tempo_viagem, seguro = self.calcular_tempo_viagem(atual_nodo, proximo_nodo, transporte)
+                            
+                            if tempo_viagem == float('inf'):
+                                rota_possivel = False
+                                break
+                            
+                            tempo_rota_total += tempo_viagem
 
-                            distancia = self.calcular_distancia(atual_nodo, proximo_nodo)
-                            if distancia > transporte.autonomia:
-                                if self.m_nodos[atual_nodo].get("reabastecimento", False):
-                                    transporte.abastecer()
-                                    tempo_total += 0.1
-                                    custo_total += 10
+                        if rota_possivel:
+                            # Processar a rota confirmada
+                            for j in range(len(caminho) - 1):
+                                atual_nodo = caminho[j]
+                                proximo_nodo = caminho[j + 1]
+                                
+                                if atual_nodo not in objetivos:
+                                    global_visitados.add(atual_nodo)
 
-                            transporte.viajar(distancia)
-                            custo_total += distancia
-                            tempo_viagem = distancia / transporte.velocidade
-                            tempo_total += tempo_viagem
+                                distancia = self.calcular_distancia(atual_nodo, proximo_nodo)
+                                if distancia > transporte.autonomia:
+                                    if self.m_nodos[atual_nodo].get("reabastecimento", False):
+                                        transporte.abastecer()
+                                        tempo_total += 0.1  # 6 minutos para reabastecimento
+                                        custo_total += 10   # Custo do reabastecimento
 
-                        for nodo in caminho:
-                            if not caminho_total or caminho_total[-1] != nodo:
-                                caminho_total.append(nodo)
+                                transporte.viajar(distancia)
+                                custo_total += distancia
+                                tempo_viagem, _ = self.calcular_tempo_viagem(atual_nodo, proximo_nodo, transporte)
+                                tempo_total += tempo_viagem
 
-                        if self.m_nodos[objetivo]["alimentos"] > 0:
-                            transporte.descarregar(self.m_nodos[objetivo]["alimentos"])
-                            custo_total += 15
-                            tempo_total += 0.5
-                            self.m_nodos[objetivo]["alimentos"] = 0
-                            self.m_nodos[objetivo]["prioridade"] = 0
+                            # Atualizar caminho total
+                            for nodo in caminho:
+                                if not caminho_total or caminho_total[-1] != nodo:
+                                    caminho_total.append(nodo)
 
-                        if self.m_nodos[objetivo]["supply_refill"] == True:
-                            transporte.carregar()
+                            # Processar entrega se houver alimentos
+                            if self.m_nodos[objetivo]["alimentos"] > 0:
+                                transporte.descarregar(self.m_nodos[objetivo]["alimentos"])
+                                custo_total += 15  # Custo da entrega
+                                tempo_total += 0.5  # 30 minutos para descarregar
+                                self.m_nodos[objetivo]["alimentos"] = 0
+                                self.m_nodos[objetivo]["prioridade"] = 0
 
-                        ponto_atual = objetivo
-                        caminho_encontrado = True
-                        break
+                            if self.m_nodos[objetivo].get("supply_refill", False):
+                                transporte.carregar()
 
-                for vizinho, _ in self.m_grafo.get(atual, []):
-                    if vizinho not in visitados and transporte.transporte_pode(self.m_nodos[vizinho]["acessibilidade"]):
-                        if vizinho in global_visitados and vizinho not in objetivos:
+                            ponto_atual = objetivo
+                            caminho_encontrado = True
+                            break
+                        else:
+                            tentativas -= 1
                             continue
-                        novo_caminho = caminho + [vizinho]
-                        if self.verificar_caminho_possivel(atual, vizinho, transporte):
-                            visitados.add(vizinho)
-                            fila.append((vizinho, novo_caminho))
 
-        tempo_total = (tempo_total * 60) / 100
-        print(f"Caminho total percorrido: {caminho_total}")
-        print(f"Custo total acumulado: {custo_total:.3f}")
-        print(f"Tempo total acumulado: {tempo_total:.2f} horas")
-        return caminho_total, round(custo_total, 3), tempo_total
+                if atual not in visitados:
+                    visitados.add(atual)
+                    for vizinho, _ in self.m_grafo.get(atual, []):
+                        if vizinho not in visitados and transporte.transporte_pode(self.m_nodos[vizinho]["acessibilidade"]):
+                            # Verificar se é seguro viajar para o próximo nodo
+                            tempo_viagem, seguro = self.calcular_tempo_viagem(atual, vizinho, transporte)
+                            if tempo_viagem == float('inf'):
+                                continue  # Pular este vizinho se as condições climáticas forem muito severas
+                            
+                            if vizinho in global_visitados and vizinho not in objetivos:
+                                continue
+                            novo_caminho = caminho + [vizinho]
+                            if self.verificar_caminho_possivel(atual, vizinho, transporte):
+                                fila.append((vizinho, novo_caminho))
+
+            if not caminho_encontrado:
+                print(f"Não foi possível encontrar um caminho seguro para {objetivo} após {tentativas_alternativas} tentativas")
+
+        if tempo_total > 0:
+            tempo_total = (tempo_total * 60) / 100  # Converter para horas
+            print(f"Caminho total percorrido: {caminho_total}")
+            print(f"Custo total acumulado: {custo_total:.3f}")
+            print(f"Tempo total acumulado: {tempo_total:.2f} horas")
+            return caminho_total, round(custo_total, 3), tempo_total
+        else:
+            print("Nenhum caminho válido encontrado devido às condições climáticas")
+            return [], 0, 0
     
     def procura_DFS(self, inicio, transporte, objetivos):
-        if inicio not in self.m_nodos:
-            raise ValueError(f"Nó '{inicio}' não existe no grafo.")
-        for objetivo in objetivos:
-            if objetivo not in self.m_nodos:
-                raise ValueError(f"Nó objetivo '{objetivo}' não existe no grafo.")
+            if inicio not in self.m_nodos:
+                raise ValueError(f"Nó '{inicio}' não existe no grafo.")
+            for objetivo in objetivos:
+                if objetivo not in self.m_nodos:
+                    raise ValueError(f"Nó objetivo '{objetivo}' não existe no grafo.")
 
-        # Verificar acessibilidade inicial
-        if not transporte.transporte_pode(self.m_nodos[inicio]["acessibilidade"]):
-            raise ValueError(f"Transporte {transporte.nome} não pode acessar o ponto inicial {inicio}")
+            # Verificar acessibilidade inicial
+            if not transporte.transporte_pode(self.m_nodos[inicio]["acessibilidade"]):
+                raise ValueError(f"Transporte {transporte.nome} não pode acessar o ponto inicial {inicio}")
 
-        caminho_total = []
-        custo_total = 0
-        tempo_total = 0
-        ponto_atual = inicio
-        global_visitados = set()
+            caminho_total = []
+            custo_total = 0
+            tempo_total = 0
+            ponto_atual = inicio
+            global_visitados = set()
+            tentativas_alternativas = 3  # Número de tentativas para encontrar rotas alternativas
 
-        # Process objectives one by one
-        for objetivo in objetivos:
-            if not self.verificar_caminho_possivel(ponto_atual, objetivo, transporte):
-                print(f"Não existe caminho possível entre {ponto_atual} e {objetivo} para {transporte.nome}")
-                continue
+            # Process objectives one by one
+            for objetivo in objetivos:
+                if not self.verificar_caminho_possivel(ponto_atual, objetivo, transporte):
+                    print(f"Não existe caminho possível entre {ponto_atual} e {objetivo} para {transporte.nome}")
+                    continue
 
-            if not transporte.transporte_pode(self.m_nodos[objetivo]["acessibilidade"]):
-                print(f"Transporte {transporte.nome} não pode acessar {objetivo}. Pulando...")
-                continue
+                if not transporte.transporte_pode(self.m_nodos[objetivo]["acessibilidade"]):
+                    print(f"Transporte {transporte.nome} não pode acessar {objetivo}. Pulando...")
+                    continue
 
-            pilha = [(ponto_atual, [ponto_atual])]
-            visitados = set()
-            caminho_encontrado = False
+                pilha = [(ponto_atual, [ponto_atual])]
+                visitados = set()
+                caminho_encontrado = False
+                tentativas = tentativas_alternativas
 
-            while pilha and not caminho_encontrado:
-                atual, caminho = pilha.pop()
+                while pilha and not caminho_encontrado and tentativas > 0:
+                    atual, caminho = pilha.pop()
 
-                if atual == objetivo:
-                    if self.verificar_caminho_completo(caminho, transporte):
-                        for j in range(len(caminho) - 1):
-                            atual_nodo = caminho[j]
-                            proximo_nodo = caminho[j + 1]
+                    if atual == objetivo:
+                        if self.verificar_caminho_completo(caminho, transporte):
+                            rota_possivel = True
+                            tempo_rota_total = 0
                             
-                            if atual_nodo not in objetivos:
-                                global_visitados.add(atual_nodo)
+                            # Verificar toda a rota antes de confirmar
+                            for j in range(len(caminho) - 1):
+                                atual_nodo = caminho[j]
+                                proximo_nodo = caminho[j + 1]
+                                
+                                # Verificar condições climáticas e calcular tempo
+                                tempo_viagem, seguro = self.calcular_tempo_viagem(atual_nodo, proximo_nodo, transporte)
+                                
+                                if not seguro or tempo_viagem == float('inf'):
+                                    rota_possivel = False
+                                    break
+                                
+                                tempo_rota_total += tempo_viagem
 
-                            distancia = self.calcular_distancia(atual_nodo, proximo_nodo)
-                            if distancia > transporte.autonomia:
-                                if self.m_nodos[atual_nodo].get("reabastecimento", False):
-                                    transporte.abastecer()
-                                    tempo_total += 0.1
-                                    custo_total += 10
+                            if rota_possivel:
+                                # Processar a rota confirmada
+                                for j in range(len(caminho) - 1):
+                                    atual_nodo = caminho[j]
+                                    proximo_nodo = caminho[j + 1]
+                                    
+                                    if atual_nodo not in objetivos:
+                                        global_visitados.add(atual_nodo)
 
-                            transporte.viajar(distancia)
-                            custo_total += distancia
-                            tempo_viagem = distancia / transporte.velocidade
-                            tempo_total += tempo_viagem
+                                    distancia = self.calcular_distancia(atual_nodo, proximo_nodo)
+                                    if distancia > transporte.autonomia:
+                                        if self.m_nodos[atual_nodo].get("reabastecimento", False):
+                                            transporte.abastecer()
+                                            tempo_total += 0.1  # 6 minutos para reabastecimento
+                                            custo_total += 10   # Custo do reabastecimento
 
-                        for nodo in caminho:
-                            if not caminho_total or caminho_total[-1] != nodo:
-                                caminho_total.append(nodo)
+                                    transporte.viajar(distancia)
+                                    custo_total += distancia
+                                    tempo_viagem, _ = self.calcular_tempo_viagem(atual_nodo, proximo_nodo, transporte)
+                                    tempo_total += tempo_viagem
 
-                        if self.m_nodos[objetivo]["alimentos"] > 0:
-                            transporte.descarregar(self.m_nodos[objetivo]["alimentos"])
-                            custo_total += 15
-                            tempo_total += 0.5
-                            self.m_nodos[objetivo]["alimentos"] = 0
-                            self.m_nodos[objetivo]["prioridade"] = 0
+                                # Atualizar caminho total
+                                for nodo in caminho:
+                                    if not caminho_total or caminho_total[-1] != nodo:
+                                        caminho_total.append(nodo)
 
-                        if self.m_nodos[objetivo]["supply_refill"] == True:
-                            transporte.carregar()
+                                # Processar entrega se houver alimentos
+                                if self.m_nodos[objetivo]["alimentos"] > 0:
+                                    transporte.descarregar(self.m_nodos[objetivo]["alimentos"])
+                                    custo_total += 15  # Custo da entrega
+                                    tempo_total += 0.5  # 30 minutos para descarregar
+                                    self.m_nodos[objetivo]["alimentos"] = 0
+                                    self.m_nodos[objetivo]["prioridade"] = 0
 
-                        ponto_atual = objetivo
-                        caminho_encontrado = True
-                        break
+                                if self.m_nodos[objetivo].get("supply_refill", False):
+                                    transporte.carregar()
 
-                if atual not in visitados:
-                    visitados.add(atual)
-                    for vizinho, _ in self.m_grafo.get(atual, []):
-                        if vizinho not in visitados and transporte.transporte_pode(self.m_nodos[vizinho]["acessibilidade"]):
-                            if vizinho in global_visitados and vizinho not in objetivos:
+                                ponto_atual = objetivo
+                                caminho_encontrado = True
+                                break
+                            else:
+                                tentativas -= 1
                                 continue
-                            novo_caminho = caminho + [vizinho]
-                            if self.verificar_caminho_possivel(atual, vizinho, transporte):
-                                pilha.append((vizinho, novo_caminho))
 
-        tempo_total = (tempo_total * 60) / 100
-        print(f"Caminho total percorrido: {caminho_total}")
-        print(f"Custo total acumulado: {custo_total:.3f}")
-        print(f"Tempo total acumulado: {tempo_total:.2f} horas")
-        return caminho_total, round(custo_total, 3), tempo_total
+                    if atual not in visitados:
+                        visitados.add(atual)
+                        for vizinho, _ in self.m_grafo.get(atual, []):
+                            if vizinho not in visitados and transporte.transporte_pode(self.m_nodos[vizinho]["acessibilidade"]):
+                                # Verificar se é seguro viajar para o próximo nodo
+                                tempo_viagem, seguro = self.calcular_tempo_viagem(atual, vizinho, transporte)
+                                if not seguro or tempo_viagem == float('inf'):
+                                    continue  # Pular este vizinho se as condições climáticas forem muito severas
+                                
+                                if vizinho in global_visitados and vizinho not in objetivos:
+                                    continue
+                                novo_caminho = caminho + [vizinho]
+                                if self.verificar_caminho_possivel(atual, vizinho, transporte):
+                                    pilha.append((vizinho, novo_caminho))
+
+                if not caminho_encontrado:
+                    print(f"Não foi possível encontrar um caminho seguro para {objetivo} após {tentativas_alternativas} tentativas")
+
+            if tempo_total > 0:
+                tempo_total = (tempo_total * 60) / 100  # Converter para horas
+                print(f"Caminho total percorrido: {caminho_total}")
+                print(f"Custo total acumulado: {custo_total:.3f}")
+                print(f"Tempo total acumulado: {tempo_total:.2f} horas")
+                return caminho_total, round(custo_total, 3), tempo_total
+            else:
+                print("Nenhum caminho válido encontrado devido às condições climáticas")
+                return [], 0, 0
 
     def a_star(self, inicio, transporte, objetivos):
+        """
+        A* algorithm implementation with additional safety checks and timeout mechanism
+        """
         if inicio not in self.m_nodos:
             raise ValueError(f"Nó '{inicio}' não existe no grafo.")
         for objetivo in objetivos:
             if objetivo not in self.m_nodos:
                 raise ValueError(f"Nó objetivo '{objetivo}' não existe no grafo.")
-
-        # Verificar acessibilidade inicial
-        if not transporte.transporte_pode(self.m_nodos[inicio]["acessibilidade"]):
-            raise ValueError(f"Transporte {transporte.nome} não pode acessar o ponto inicial {inicio}")
-
-        caminho_total = []
-        custo_total = 0
-        tempo_total = 0
-        ponto_atual = inicio  # Keep track of current position
-        global_visitados = set()
-
-        # Process objectives one by one
-        for objetivo in objetivos:
-            if not self.verificar_caminho_possivel(ponto_atual, objetivo, transporte):
-                print(f"Não existe caminho possível entre {ponto_atual} e {objetivo} para {transporte.nome}")
-                continue
-
-            if not transporte.transporte_pode(self.m_nodos[objetivo]["acessibilidade"]):
-                print(f"Transporte {transporte.nome} não pode acessar {objetivo}. Pulando...")
-                continue
-
-            fila_prioridade = []
-            heapq.heappush(fila_prioridade, (0, ponto_atual, [ponto_atual], 0))
-            visitados = set()
-            caminho_encontrado = False
-
-            while fila_prioridade and not caminho_encontrado:
-                f_atual, atual, caminho, g_atual = heapq.heappop(fila_prioridade)
-
-                if atual in visitados:
-                    continue
-                visitados.add(atual)
-
-                if atual == objetivo:
-                    if self.verificar_caminho_completo(caminho, transporte):
-                        for j in range(len(caminho) - 1):
-                            atual_nodo = caminho[j]
-                            proximo_nodo = caminho[j + 1]
-                            
-                            if atual_nodo not in objetivos:
-                                global_visitados.add(atual_nodo)
-
-                            distancia = self.calcular_distancia(atual_nodo, proximo_nodo)
-                            if distancia > transporte.autonomia:
-                                if self.m_nodos[atual_nodo].get("reabastecimento", False):
-                                    transporte.abastecer()
-                                    tempo_total += 0.1
-                                    custo_total += 10
-
-                            transporte.viajar(distancia)
-                            custo_total += distancia
-                            tempo_viagem = distancia / transporte.velocidade
-                            tempo_total += tempo_viagem
-
-                        # Update path and current position
-                        for nodo in caminho:
-                            if not caminho_total or caminho_total[-1] != nodo:
-                                caminho_total.append(nodo)
-                        ponto_atual = objetivo
-                        
-                        if self.m_nodos[objetivo]["alimentos"] > 0:
-                            transporte.descarregar(self.m_nodos[objetivo]["alimentos"])
-                            custo_total += 15
-                            tempo_total += 0.5
-                            self.m_nodos[objetivo]["alimentos"] = 0
-                            self.m_nodos[objetivo]["prioridade"] = 0
-
-                        if self.m_nodos[objetivo]["supply_refill"] == True:
-                            transporte.carregar()
-                            
-                        caminho_encontrado = True
-                        break
-
-                for vizinho, peso in self.m_grafo.get(atual, []):
-                    if vizinho not in visitados and transporte.transporte_pode(self.m_nodos[vizinho]["acessibilidade"]):
-                        if vizinho in global_visitados and vizinho not in objetivos:
-                            continue
-                            
-                        novo_caminho = caminho + [vizinho]
-                        if self.verificar_caminho_possivel(atual, vizinho, transporte):
-                            g_vizinho = g_atual + peso
-                            h_vizinho = self.calcular_heuristica(vizinho, objetivo)
-                            f_vizinho = g_vizinho + h_vizinho
-                            heapq.heappush(fila_prioridade, (f_vizinho, vizinho, novo_caminho, g_vizinho))
-
-        tempo_total = (tempo_total * 60) / 100
-        print(f"Caminho total percorrido: {caminho_total}")
-        print(f"Custo total acumulado: {custo_total:.3f}")
-        print(f"Tempo total acumulado: {tempo_total:.2f} horas")
-        return caminho_total, round(custo_total, 3), tempo_total
-
-    def procura_greedy(self, inicio, transporte, objetivos):
-        if inicio not in self.m_nodos:
-            raise ValueError(f"Nó '{inicio}' não existe no grafo.")
-        for objetivo in objetivos:
-            if objetivo not in self.m_nodos:
-                raise ValueError(f"Nó objetivo '{objetivo}' não existe no grafo.")
-
-        # Verificar acessibilidade inicial
         if not transporte.transporte_pode(self.m_nodos[inicio]["acessibilidade"]):
             raise ValueError(f"Transporte {transporte.nome} não pode acessar o ponto inicial {inicio}")
 
@@ -564,88 +620,256 @@ class Grafo:
         tempo_total = 0
         ponto_atual = inicio
         global_visitados = set()
+        max_iterations = 1000  # Prevent infinite loops
 
-        # Process objectives one by one
         for objetivo in objetivos:
             if not self.verificar_caminho_possivel(ponto_atual, objetivo, transporte):
-                print(f"Não existe caminho possível entre {ponto_atual} e {objetivo} para {transporte.nome}")
+                print(f"Não existe caminho possível entre {ponto_atual} e {objetivo}")
                 continue
 
-            if not transporte.transporte_pode(self.m_nodos[objetivo]["acessibilidade"]):
-                print(f"Transporte {transporte.nome} não pode acessar {objetivo}. Pulando...")
-                continue
-
-            fila_prioridade = [(0, ponto_atual, [ponto_atual])]
-            visitados = set()
+            tentativas = 3
             caminho_encontrado = False
+            iteration_count = 0
 
-            while fila_prioridade and not caminho_encontrado:
-                _, atual, caminho = heapq.heappop(fila_prioridade)
+            while not caminho_encontrado and tentativas > 0 and iteration_count < max_iterations:
+                fila_prioridade = []
+                heapq.heappush(fila_prioridade, (0, 0, ponto_atual, [ponto_atual]))  # (f_score, g_score, node, path)
+                visitados = set()
+                custos_g = {ponto_atual: 0}
 
-                if atual == objetivo:
-                    if self.verificar_caminho_completo(caminho, transporte):
-                        for j in range(len(caminho) - 1):
-                            atual_nodo = caminho[j]
-                            proximo_nodo = caminho[j + 1]
+                while fila_prioridade and iteration_count < max_iterations:
+                    iteration_count += 1
+                    f_atual, g_atual, atual, caminho = heapq.heappop(fila_prioridade)
+
+                    if atual == objetivo:
+                        if self.verificar_caminho_completo(caminho, transporte):
+                            rota_possivel = True
                             
-                            if atual_nodo not in objetivos:
-                                global_visitados.add(atual_nodo)
+                            # Verify weather conditions
+                            for j in range(len(caminho) - 1):
+                                atual_nodo = caminho[j]
+                                proximo_nodo = caminho[j + 1]
+                                tempo_viagem, seguro = self.calcular_tempo_viagem(atual_nodo, proximo_nodo, transporte)
+                                
+                                if not seguro or tempo_viagem == float('inf'):
+                                    rota_possivel = False
+                                    break
 
-                            distancia = self.calcular_distancia(atual_nodo, proximo_nodo)
-                            if distancia > transporte.autonomia:
-                                if self.m_nodos[atual_nodo].get("reabastecimento", False):
-                                    transporte.abastecer()
-                                    tempo_total += 0.1
-                                    custo_total += 10
+                            if rota_possivel:
+                                # Process the route
+                                for j in range(len(caminho) - 1):
+                                    atual_nodo = caminho[j]
+                                    proximo_nodo = caminho[j + 1]
+                                    
+                                    if atual_nodo not in objetivos:
+                                        global_visitados.add(atual_nodo)
 
-                            transporte.viajar(distancia)
-                            custo_total += distancia
-                            tempo_viagem = distancia / transporte.velocidade
-                            tempo_total += tempo_viagem
+                                    distancia = self.calcular_distancia(atual_nodo, proximo_nodo)
+                                    if distancia > transporte.autonomia:
+                                        if self.m_nodos[atual_nodo].get("reabastecimento", False):
+                                            transporte.abastecer()
+                                            tempo_total += 0.1
+                                            custo_total += 10
 
-                        for nodo in caminho:
-                            if not caminho_total or caminho_total[-1] != nodo:
-                                caminho_total.append(nodo)
+                                    transporte.viajar(distancia)
+                                    custo_total += distancia
+                                    tempo_viagem, _ = self.calcular_tempo_viagem(atual_nodo, proximo_nodo, transporte)
+                                    tempo_total += tempo_viagem
 
-                        if self.m_nodos[objetivo]["alimentos"] > 0:
-                            transporte.descarregar(self.m_nodos[objetivo]["alimentos"])
-                            custo_total += 15
-                            tempo_total += 0.5
-                            self.m_nodos[objetivo]["alimentos"] = 0
-                            self.m_nodos[objetivo]["prioridade"] = 0
+                                for nodo in caminho:
+                                    if not caminho_total or caminho_total[-1] != nodo:
+                                        caminho_total.append(nodo)
 
-                        if self.m_nodos[objetivo]["supply_refill"] == True:
-                            transporte.carregar()
+                                if self.m_nodos[objetivo]["alimentos"] > 0:
+                                    transporte.descarregar(self.m_nodos[objetivo]["alimentos"])
+                                    custo_total += 15
+                                    tempo_total += 0.5
+                                    self.m_nodos[objetivo]["alimentos"] = 0
+                                    self.m_nodos[objetivo]["prioridade"] = 0
 
-                        ponto_atual = objetivo
-                        caminho_encontrado = True
-                        break
+                                if self.m_nodos[objetivo].get("supply_refill", False):
+                                    transporte.carregar()
 
-                if atual not in visitados:
+                                ponto_atual = objetivo
+                                caminho_encontrado = True
+                                break
+
+                    if atual in visitados:
+                        continue
+                        
                     visitados.add(atual)
-                    for vizinho, _ in self.m_grafo.get(atual, []):
-                        if vizinho not in visitados and transporte.transporte_pode(self.m_nodos[vizinho]["acessibilidade"]):
+
+                    for vizinho, peso in self.m_grafo.get(atual, []):
+                        if (vizinho not in visitados and 
+                            transporte.transporte_pode(self.m_nodos[vizinho]["acessibilidade"])):
+                            
+                            tempo_viagem, seguro = self.calcular_tempo_viagem(atual, vizinho, transporte)
+                            if not seguro or tempo_viagem == float('inf'):
+                                continue
+
                             if vizinho in global_visitados and vizinho not in objetivos:
                                 continue
+
                             novo_caminho = caminho + [vizinho]
                             if self.verificar_caminho_possivel(atual, vizinho, transporte):
-                                h_custo = self.calcular_heuristica(vizinho, objetivo)
-                                heapq.heappush(fila_prioridade, (h_custo, vizinho, novo_caminho))
+                                novo_g = g_atual + peso
+                                if vizinho not in custos_g or novo_g < custos_g[vizinho]:
+                                    custos_g[vizinho] = novo_g
+                                    h = self.calcular_heuristica(vizinho, objetivo)
+                                    f = novo_g + h
+                                    heapq.heappush(fila_prioridade, (f, novo_g, vizinho, novo_caminho))
 
-        tempo_total = (tempo_total * 60) / 100
-        print(f"Caminho total percorrido: {caminho_total}")
-        print(f"Custo total acumulado: {custo_total:.3f}")
-        print(f"Tempo total acumulado: {tempo_total:.2f} horas")
-        return caminho_total, round(custo_total, 3), tempo_total
-    
-    def custo_uniforme(self, inicio, transporte, objetivos):
+                if not caminho_encontrado:
+                    tentativas -= 1
+
+            if iteration_count >= max_iterations:
+                print(f"Limite de iterações atingido para o objetivo {objetivo}")
+
+        if tempo_total > 0:
+            tempo_total = (tempo_total * 60) / 100
+            print(f"Caminho total percorrido: {caminho_total}")
+            print(f"Custo total acumulado: {custo_total:.3f}")
+            print(f"Tempo total acumulado: {tempo_total:.2f} horas")
+            return caminho_total, round(custo_total, 3), tempo_total
+        else:
+            print("Nenhum caminho válido encontrado")
+            return [], 0, 0
+
+    def procura_greedy(self, inicio, transporte, objetivos):
+        """
+        Greedy search implementation with additional safety checks and timeout mechanism
+        """
         if inicio not in self.m_nodos:
             raise ValueError(f"Nó '{inicio}' não existe no grafo.")
         for objetivo in objetivos:
             if objetivo not in self.m_nodos:
                 raise ValueError(f"Nó objetivo '{objetivo}' não existe no grafo.")
+        if not transporte.transporte_pode(self.m_nodos[inicio]["acessibilidade"]):
+            raise ValueError(f"Transporte {transporte.nome} não pode acessar o ponto inicial {inicio}")
 
-        # Verificar acessibilidade inicial
+        caminho_total = []
+        custo_total = 0
+        tempo_total = 0
+        ponto_atual = inicio
+        global_visitados = set()
+        max_iterations = 1000
+
+        for objetivo in objetivos:
+            if not self.verificar_caminho_possivel(ponto_atual, objetivo, transporte):
+                print(f"Não existe caminho possível entre {ponto_atual} e {objetivo}")
+                continue
+
+            tentativas = 3
+            caminho_encontrado = False
+            iteration_count = 0
+
+            while not caminho_encontrado and tentativas > 0 and iteration_count < max_iterations:
+                iteration_count += 1
+                fila_prioridade = []
+                h_inicial = self.calcular_heuristica(ponto_atual, objetivo)
+                heapq.heappush(fila_prioridade, (h_inicial, ponto_atual, [ponto_atual]))
+                visitados = set()
+
+                while fila_prioridade and iteration_count < max_iterations:
+                    iteration_count += 1
+                    _, atual, caminho = heapq.heappop(fila_prioridade)
+
+                    if atual == objetivo:
+                        if self.verificar_caminho_completo(caminho, transporte):
+                            rota_possivel = True
+                            
+                            # Check weather conditions
+                            for j in range(len(caminho) - 1):
+                                atual_nodo = caminho[j]
+                                proximo_nodo = caminho[j + 1]
+                                tempo_viagem, seguro = self.calcular_tempo_viagem(atual_nodo, proximo_nodo, transporte)
+                                
+                                if not seguro or tempo_viagem == float('inf'):
+                                    rota_possivel = False
+                                    break
+
+                            if rota_possivel:
+                                # Process valid route
+                                for j in range(len(caminho) - 1):
+                                    atual_nodo = caminho[j]
+                                    proximo_nodo = caminho[j + 1]
+                                    
+                                    if atual_nodo not in objetivos:
+                                        global_visitados.add(atual_nodo)
+
+                                    distancia = self.calcular_distancia(atual_nodo, proximo_nodo)
+                                    if distancia > transporte.autonomia:
+                                        if self.m_nodos[atual_nodo].get("reabastecimento", False):
+                                            transporte.abastecer()
+                                            tempo_total += 0.1
+                                            custo_total += 10
+
+                                    transporte.viajar(distancia)
+                                    custo_total += distancia
+                                    tempo_viagem, _ = self.calcular_tempo_viagem(atual_nodo, proximo_nodo, transporte)
+                                    tempo_total += tempo_viagem
+
+                                for nodo in caminho:
+                                    if not caminho_total or caminho_total[-1] != nodo:
+                                        caminho_total.append(nodo)
+
+                                if self.m_nodos[objetivo]["alimentos"] > 0:
+                                    transporte.descarregar(self.m_nodos[objetivo]["alimentos"])
+                                    custo_total += 15
+                                    tempo_total += 0.5
+                                    self.m_nodos[objetivo]["alimentos"] = 0
+                                    self.m_nodos[objetivo]["prioridade"] = 0
+
+                                if self.m_nodos[objetivo].get("supply_refill", False):
+                                    transporte.carregar()
+
+                                ponto_atual = objetivo
+                                caminho_encontrado = True
+                                break
+
+                    if atual not in visitados:
+                        visitados.add(atual)
+                        for vizinho, _ in self.m_grafo.get(atual, []):
+                            if (vizinho not in visitados and 
+                                transporte.transporte_pode(self.m_nodos[vizinho]["acessibilidade"])):
+                                
+                                tempo_viagem, seguro = self.calcular_tempo_viagem(atual, vizinho, transporte)
+                                if not seguro or tempo_viagem == float('inf'):
+                                    continue
+
+                                if vizinho in global_visitados and vizinho not in objetivos:
+                                    continue
+
+                                novo_caminho = caminho + [vizinho]
+                                if self.verificar_caminho_possivel(atual, vizinho, transporte):
+                                    h = self.calcular_heuristica(vizinho, objetivo)
+                                    heapq.heappush(fila_prioridade, (h, vizinho, novo_caminho))
+
+                if not caminho_encontrado:
+                    tentativas -= 1
+
+            if iteration_count >= max_iterations:
+                print(f"Limite de iterações atingido para o objetivo {objetivo}")
+
+        if tempo_total > 0:
+            tempo_total = (tempo_total * 60) / 100
+            print(f"Caminho total percorrido: {caminho_total}")
+            print(f"Custo total acumulado: {custo_total:.3f}")
+            print(f"Tempo total acumulado: {tempo_total:.2f} horas")
+            return caminho_total, round(custo_total, 3), tempo_total
+        else:
+            print("Nenhum caminho válido encontrado")
+            return [], 0, 0
+    
+    def custo_uniforme(self, inicio, transporte, objetivos):
+        """
+        Uniform Cost Search implementation with additional safety checks and timeout mechanism
+        """
+        if inicio not in self.m_nodos:
+            raise ValueError(f"Nó '{inicio}' não existe no grafo.")
+        for objetivo in objetivos:
+            if objetivo not in self.m_nodos:
+                raise ValueError(f"Nó objetivo '{objetivo}' não existe no grafo.")
         if not transporte.transporte_pode(self.m_nodos[inicio]["acessibilidade"]):
             raise ValueError(f"Transporte {transporte.nome} não pode acessar o ponto inicial {inicio}")
 
@@ -655,100 +879,132 @@ class Grafo:
         ponto_atual = inicio
         visitados_global = set()
         objetivos_restantes = objetivos.copy()
+        max_iterations = 1000  # Prevent infinite loops
 
         while objetivos_restantes:
             objetivo_atual = objetivos_restantes[0]
             
-            # Verificar se existe caminho possível para o próximo objetivo
             if not self.verificar_caminho_possivel(ponto_atual, objetivo_atual, transporte):
                 print(f"Não existe caminho possível entre {ponto_atual} e {objetivo_atual}")
                 objetivos_restantes.pop(0)
                 continue
 
-            # Verificar acessibilidade do objetivo
             if not transporte.transporte_pode(self.m_nodos[objetivo_atual]["acessibilidade"]):
                 print(f"Transporte {transporte.nome} não pode acessar {objetivo_atual}")
                 objetivos_restantes.pop(0)
                 continue
 
-            fila_prioridade = [(0, ponto_atual, [ponto_atual])]
-            visitados = set()
+            tentativas = 3
             caminho_encontrado = False
+            iteration_count = 0
 
-            while fila_prioridade and not caminho_encontrado:
-                custo_atual, atual, caminho = heapq.heappop(fila_prioridade)
+            while not caminho_encontrado and tentativas > 0 and iteration_count < max_iterations:
+                iteration_count += 1
+                fila_prioridade = [(0, ponto_atual, [ponto_atual])]  # (cost, node, path)
+                visitados = set()
+                custos = {ponto_atual: 0}
 
-                if atual == objetivo_atual:
-                    # Verificar se o caminho é válido considerando autonomia
-                    caminho_valido = True
-                    autonomia_atual = transporte.autonomia
-                    
-                    for i in range(len(caminho) - 1):
-                        atual_nodo = caminho[i]
-                        proximo_nodo = caminho[i + 1]
-                        distancia = self.calcular_distancia(atual_nodo, proximo_nodo)
-                        
-                        if distancia > autonomia_atual:
-                            if not self.m_nodos[atual_nodo].get("reabastecimento", False):
-                                caminho_valido = False
+                while fila_prioridade and iteration_count < max_iterations:
+                    iteration_count += 1
+                    custo_atual, atual, caminho = heapq.heappop(fila_prioridade)
+
+                    if atual == objetivo_atual:
+                        if self.verificar_caminho_completo(caminho, transporte):
+                            rota_possivel = True
+                            
+                            # Check weather conditions for entire route
+                            for j in range(len(caminho) - 1):
+                                atual_nodo = caminho[j]
+                                proximo_nodo = caminho[j + 1]
+                                tempo_viagem, seguro = self.calcular_tempo_viagem(atual_nodo, proximo_nodo, transporte)
+                                
+                                if not seguro or tempo_viagem == float('inf'):
+                                    rota_possivel = False
+                                    break
+
+                            if rota_possivel:
+                                # Process the confirmed route
+                                for j in range(len(caminho) - 1):
+                                    atual_nodo = caminho[j]
+                                    proximo_nodo = caminho[j + 1]
+                                    
+                                    if atual_nodo not in objetivos:
+                                        visitados_global.add(atual_nodo)
+
+                                    distancia = self.calcular_distancia(atual_nodo, proximo_nodo)
+                                    if distancia > transporte.autonomia:
+                                        if self.m_nodos[atual_nodo].get("reabastecimento", False):
+                                            transporte.abastecer()
+                                            tempo_total += 0.1  # 6 minutes for refueling
+                                            custo_total += 10   # Refueling cost
+
+                                    transporte.viajar(distancia)
+                                    custo_total += distancia
+                                    tempo_viagem, _ = self.calcular_tempo_viagem(atual_nodo, proximo_nodo, transporte)
+                                    tempo_total += tempo_viagem
+
+                                # Update total path
+                                for nodo in caminho:
+                                    if not caminho_total or caminho_total[-1] != nodo:
+                                        caminho_total.append(nodo)
+
+                                # Handle delivery at objective
+                                if self.m_nodos[objetivo_atual]["alimentos"] > 0:
+                                    transporte.descarregar(self.m_nodos[objetivo_atual]["alimentos"])
+                                    custo_total += 15  # Delivery cost
+                                    tempo_total += 0.5  # 30 minutes for unloading
+                                    self.m_nodos[objetivo_atual]["alimentos"] = 0
+                                    self.m_nodos[objetivo_atual]["prioridade"] = 0
+
+                                if self.m_nodos[objetivo_atual].get("supply_refill", False):
+                                    transporte.carregar()
+
+                                ponto_atual = objetivo_atual
+                                objetivos_restantes.pop(0)
+                                caminho_encontrado = True
                                 break
-                            autonomia_atual = transporte.deposito
-                        
-                        autonomia_atual -= distancia
 
-                    if caminho_valido:
-                        # Processar o caminho encontrado
-                        for i in range(len(caminho) - 1):
-                            atual_nodo = caminho[i]
-                            proximo_nodo = caminho[i + 1]
+                    if atual not in visitados:
+                        visitados.add(atual)
+                        for vizinho, peso in self.m_grafo.get(atual, []):
+                            if (vizinho not in visitados and 
+                                transporte.transporte_pode(self.m_nodos[vizinho]["acessibilidade"]) and
+                                (vizinho not in visitados_global or vizinho in objetivos)):
+                                
+                                # Check weather safety for next step
+                                tempo_viagem, seguro = self.calcular_tempo_viagem(atual, vizinho, transporte)
+                                if not seguro or tempo_viagem == float('inf'):
+                                    continue
+                                
+                                novo_caminho = caminho + [vizinho]
+                                if self.verificar_caminho_possivel(atual, vizinho, transporte):
+                                    # Calculate new cost with weather consideration
+                                    tempo_base = self.calcular_distancia(atual, vizinho) / transporte.velocidade
+                                    multiplicador_clima = tempo_viagem / tempo_base
+                                    novo_custo = custo_atual + (peso * multiplicador_clima)
+                                    
+                                    if vizinho not in custos or novo_custo < custos[vizinho]:
+                                        custos[vizinho] = novo_custo
+                                        heapq.heappush(fila_prioridade, (novo_custo, vizinho, novo_caminho))
 
-                            if atual_nodo not in objetivos:
-                                visitados_global.add(atual_nodo)
+                if not caminho_encontrado:
+                    tentativas -= 1
 
-                            distancia = self.calcular_distancia(atual_nodo, proximo_nodo)
-                            if distancia > transporte.autonomia:
-                                if self.m_nodos[atual_nodo].get("reabastecimento", False):
-                                    transporte.abastecer()
-                                    tempo_total += 0.1  # 6 minutos para reabastecer
-                                    custo_total += 10   # Custo do reabastecimento
-
-                            transporte.viajar(distancia)
-                            custo_total += distancia
-                            tempo_viagem = distancia / transporte.velocidade
-                            tempo_total += tempo_viagem
-
-                        # Atualizar caminho total
-                        for nodo in caminho:
-                            if not caminho_total or caminho_total[-1] != nodo:
-                                caminho_total.append(nodo)
-
-                        # Processar entrega de alimentos
-                        if self.m_nodos[objetivo_atual]["alimentos"] > 0:
-                            transporte.descarregar(self.m_nodos[objetivo_atual]["alimentos"])
-                            custo_total += 15  # Custo da entrega
-                            tempo_total += 0.5  # 30 minutos para descarregar
-                            self.m_nodos[objetivo_atual]["alimentos"] = 0
-                            self.m_nodos[objetivo_atual]["prioridade"] = 0
-
-                        # Atualizar posição atual e remover objetivo completado
-                        ponto_atual = objetivo_atual
-                        objetivos_restantes.pop(0)
-                        caminho_encontrado = True
-                        break
-
-                if atual not in visitados:
-                    visitados.add(atual)
-                    for vizinho, peso in self.m_grafo.get(atual, []):
-                        if (vizinho not in visitados and 
-                            transporte.transporte_pode(self.m_nodos[vizinho]["acessibilidade"]) and
-                            (vizinho not in visitados_global or vizinho in objetivos)):
-                            novo_caminho = caminho + [vizinho]
-                            novo_custo = custo_atual + peso
-                            heapq.heappush(fila_prioridade, (novo_custo, vizinho, novo_caminho))
+                if iteration_count >= max_iterations:
+                    print(f"Limite de iterações atingido para o objetivo {objetivo_atual}")
+                    break
 
             if not caminho_encontrado:
-                print(f"Não foi possível encontrar caminho para {objetivo_atual}")
+                print(f"Não foi possível encontrar um caminho seguro para {objetivo_atual} após {tentativas} tentativas")
                 objetivos_restantes.pop(0)
 
-        tempo_total = (tempo_total * 60) / 100  # Converter para horas
-        return caminho_total, round(custo_total, 3), tempo_total
+        # Calculate final times and return results
+        if tempo_total > 0:
+            tempo_total = (tempo_total * 60) / 100  # Convert to hours
+            print(f"Caminho total percorrido: {caminho_total}")
+            print(f"Custo total acumulado: {custo_total:.3f}")
+            print(f"Tempo total acumulado: {tempo_total:.2f} horas")
+            return caminho_total, round(custo_total, 3), tempo_total
+        else:
+            print("Nenhum caminho válido encontrado")
+            return [], 0, 0
