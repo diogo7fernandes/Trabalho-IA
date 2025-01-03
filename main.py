@@ -1,18 +1,22 @@
 import sys
 from grafo import Grafo
 import random
-from transporte import Carro, Moto, Helicoptero, Drone
+from transporte import Carro, Mota, Helicoptero, Drone
 import copy
 
 sys.path.append(".")
 
-def guardar_resultados(nome_algoritmo, caminho, custo, tempo_execucao=None):
-    with open(f"resultados_{nome_algoritmo}.txt", "w") as arquivo:
+def guardar_resultados(nome_algoritmo, caminho, custo, tempo_execucao=None, detalhes_erro=None):
+    with open(f"Resultados_{nome_algoritmo}.txt", "w", encoding='utf-8') as arquivo:
         arquivo.write(f"Algoritmo: {nome_algoritmo}\n")
-        arquivo.write(f"Caminho: {' -> '.join(map(str, caminho))}\n")
-        arquivo.write(f"Custo total: {custo}\n")
-        if tempo_execucao is not None:
-            arquivo.write(f"Tempo total: {tempo_execucao:.2f} horas\n")
+        
+        if not caminho:
+            arquivo.write("AVISO: Nenhum caminho encontrado\n")
+        else:
+            arquivo.write(f"Caminho: {' -> '.join(map(str, caminho))}\n")
+            arquivo.write(f"Custo total: {custo}\n")
+            if tempo_execucao is not None:
+                arquivo.write(f"Tempo total: {tempo_execucao:.2f} horas\n")
 
 def main():
     g = Grafo()
@@ -45,7 +49,15 @@ def main():
     g.adicionar_nodo("Cabeceiras de Basto", {"coordenadas": (41.5151, -7.9889), **gerar_atributos_aleatorios()})
 
     def organizar_prioridade(self):
-        prioridades = [(nodo, atributos["prioridade"]) for nodo, atributos in self.m_nodos.items() if atributos["alimentos"] > 0]
+        # Only consider locations that need deliveries
+        prioridades = [
+            (nodo, atributos["prioridade"]) 
+            for nodo, atributos in self.m_nodos.items() 
+            if atributos.get("alimentos", 0) > 0  # Use get() to handle missing keys
+        ]
+        if not prioridades:
+            print("Aviso: Não há locais que necessitem de entrega")
+            return []
         prioridades_ordenadas = sorted(prioridades, key=lambda x: x[1], reverse=True)
         return [nodo for nodo, _ in prioridades_ordenadas]
 
@@ -184,7 +196,7 @@ def main():
             l = input("Pressione Enter para continuar...")
         elif saida == 4:
             inicio = "Centro"
-            transportes = [Carro(), Moto(), Helicoptero(), Drone()]
+            transportes = [Carro(), Mota(), Helicoptero(), Drone()]
             for transporte in transportes:
                 try:
                     caminho, custo_total, tempo_total = gg.procura_DFS(inicio, transporte, lista_prioridades)
@@ -198,7 +210,7 @@ def main():
             input("Pressione Enter para continuar...")
         elif saida == 5:
             inicio = "Centro"
-            transportes = [Carro(), Moto(), Helicoptero(), Drone()]
+            transportes = [Carro(), Mota(), Helicoptero(), Drone()]
             for transporte in transportes:
                 try:
                     caminho, custo_total, tempo_total = gg.procura_BFS(inicio, transporte, lista_prioridades)
@@ -212,7 +224,7 @@ def main():
             input("Pressione Enter para continuar...")
         elif saida == 6:
             inicio = "Centro"
-            transportes = [Carro(), Moto(), Helicoptero(), Drone()]
+            transportes = [Carro(), Mota(), Helicoptero(), Drone()]
             try:
                 for transporte in transportes:
                     try:
@@ -231,7 +243,7 @@ def main():
             input("Pressione Enter para continuar...")
         elif saida == 7:
             inicio = "Centro"
-            transportes = [Carro(), Moto(), Helicoptero(), Drone()]
+            transportes = [Carro(), Mota(), Helicoptero(), Drone()]
             for transporte in transportes:
                 try:
                     print(f"Executando Custo Uniforme para o transporte '{transporte.nome}'...")
@@ -245,7 +257,7 @@ def main():
             input("Pressione Enter para continuar...")
         elif saida == 8:
             inicio = "Centro"
-            transportes = [Carro(), Moto(), Helicoptero(), Drone()]
+            transportes = [Carro(), Mota(), Helicoptero(), Drone()]
             for transporte in transportes:
                 try:
                     print(f"Executando Greedy para o transporte '{transporte.nome}'...")

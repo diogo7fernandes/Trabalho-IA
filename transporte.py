@@ -34,7 +34,7 @@ class Transporte:
     def transporte_pode(self,acessibilidade):
         if isinstance(self, Carro) and (0 <= acessibilidade <= 5):
             return True
-        elif isinstance(self, Moto) and (0 <= acessibilidade <= 7):
+        elif isinstance(self, Mota) and (0 <= acessibilidade <= 7):
             return True
         elif isinstance(self, Helicoptero) and (0 <= acessibilidade <= 10):
             return True
@@ -54,10 +54,10 @@ class Carro(Transporte):
             deposito = 700
         )
 
-class Moto(Transporte):
+class Mota(Transporte):
     def __init__(self):
         super().__init__(
-            nome="Moto",
+            nome="Mota",
             capacidade = 100,
             alimentos = 100,
             velocidade = 60,
