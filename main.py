@@ -214,12 +214,38 @@ def main():
                     print(e)
             input("Pressione Enter para continuar...")
         elif saida == 6:
+            inicio = "Centro"
+            transportes = [
+                Carro(),
+                Moto(),
+                Helicoptero(),
+                Drone()
+            ]
+
             try:
-                caminho, custo_total = gg.a_star()
-                guardar_resultados("A*", caminho, custo_total)
+
+                for transporte in transportes:
+                    try:
+                        # Chamar o método procura_A_estrela
+                        caminho, custo_total, tempo_total = gg.a_star(inicio, transporte, lista_prioridades)
+
+                        # Guardar os resultados
+                        guardar_resultados(f"A*_{transporte.nome}", caminho, custo_total, tempo_total)
+
+                        # Exibir os resultados
+                        print(f"[A* - {transporte.nome}]")
+                        print(f"Caminho encontrado: {caminho}")
+                        print(f"Custo total: {custo_total}")
+                        print(f"Tempo total: {tempo_total:.2f} horas")
+                    except ValueError as e:
+                        print(f"Erro com o transporte {transporte.nome}: {e}")
+                    except Exception as ex:
+                        print(f"Ocorreu um erro inesperado com o transporte {transporte.nome}: {ex}")
             except ValueError as e:
                 print(e)
             input("Pressione Enter para continuar...")
+
+
         elif saida == 7:
             caminho, custo_total = gg.custo_uniforme()
             print(caminho)

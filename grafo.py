@@ -369,61 +369,102 @@ class Grafo:
         print(f"Tempo total acumulado: {tempo_total:.2f} horas")
         return caminho_total, round(custo_total, 3), tempo_total
     
-    def a_star(self):
-        inicio = 'Centro'
-        loc = self.heuristica_grafo()
-        objetivo = loc[1]
-        
-        if inicio not in self.m_nodos or objetivo not in self.m_nodos:
-            raise ValueError("Nó inicial ou objetivo não existe no grafo.")
+    def a_star(self, inicio, transporte, objetivos):
+        if inicio not in self.m_nodos:
+            raise ValueError(f"Nó '{inicio}' não existe no grafo.")
+        for objetivo in objetivos:
+            if objetivo not in self.m_nodos:
+                raise ValueError(f"Nó objetivo '{objetivo}' não existe no grafo.")
 
-        transportes = [Carro(), Moto(), Helicoptero(), Drone()]
-        resultados = []
+        caminho_total = []
+        custo_total = 0
+        tempo_total = 0
 
-        for transporte in transportes:
+        pontos = [inicio] + objetivos
+        i = 0
+        while i < len(pontos) - 1:
+            ponto_atual = pontos[i]
+            ponto_objetivo = pontos[i + 1]
+
+            if ponto_atual not in objetivos and ponto_atual != inicio:
+                i += 1
+                continue
+
+            if ponto_objetivo not in objetivos:
+                i += 1
+                continue
+
+            # Implementação do A*
             fila_prioridade = []
-            heapq.heappush(fila_prioridade, (0, inicio, [inicio]))
-            custos = {inicio: 0}
-            tempo_total = 0
-            autonomia_inicial = transporte.autonomia
+            heapq.heappush(fila_prioridade, (0, ponto_atual, [ponto_atual], 0))  # (f(n), nodo_atual, caminho, g(n))
+            visitados = set()
+            caminho_otimo = None
 
             while fila_prioridade:
-                f_atual, atual, caminho = heapq.heappop(fila_prioridade)
+                f_atual, atual, caminho, g_atual = heapq.heappop(fila_prioridade)
 
-                if atual == objetivo:
-                    custo_total = custos[atual]
-                    resultados.append((transporte.nome, caminho, custo_total, tempo_total))
+                if atual in visitados:
+                    continue
+                visitados.add(atual)
+
+                if atual == ponto_objetivo:
+                    caminho_otimo = caminho
                     break
 
                 for vizinho, peso in self.m_grafo.get(atual, []):
-                    if transporte.autonomia >= peso:
-                        if vizinho not in custos:
-                            custos[vizinho] = float('inf')
+                    if vizinho not in visitados:
+                        g_vizinho = g_atual + peso
+                        h_vizinho = self.calcular_heuristica(vizinho, ponto_objetivo)  # Heurística
+                        f_vizinho = g_vizinho + h_vizinho
+                        heapq.heappush(fila_prioridade, (f_vizinho, vizinho, caminho + [vizinho], g_vizinho))
 
-                        g_custo = custos[atual] + peso
-                        h_custo = self.calcular_heuristica(vizinho, objetivo)
-                        f_custo = g_custo + h_custo
+            if not caminho_otimo:
+                break
 
-                        if g_custo < custos[vizinho]:
-                            custos[vizinho] = g_custo
-                            heapq.heappush(fila_prioridade, (f_custo, vizinho, caminho + [vizinho]))
-                            transporte.autonomia -= peso
-                            tempo_total += peso / transporte.velocidade
+            # Processar o caminho ótimo
+            for j in range(len(caminho_otimo) - 1):
+                atual = caminho_otimo[j]
+                proximo = caminho_otimo[j + 1]
+
+                self.m_nodos[atual]["TTL"] -= 1
+                if self.m_nodos[atual]["TTL"] <= 0:
+                    continue
+
+                distancia = self.calcular_distancia(atual, proximo)
+                if distancia > transporte.autonomia:
+                    if self.m_nodos[atual].get("reabastecimento", False):
+                        tr.Transporte.abastecer(transporte)
+                        tempo_total += 0.1
+                        custo_total += 10
                     else:
-                        if self.m_nodos[atual].get("reabastecimento", False):
-                            print(f"Reabastecendo transporte {transporte.nome} no nó '{atual}'.")
-                            transporte.reabastecer()
-                        else:
-                            print(f"Nó '{atual}' não permite reabastecimento. Ignorando o vizinho '{vizinho}'.")
-                            continue
+                        break
 
-            transporte.autonomia = autonomia_inicial
+                tr.Transporte.viajar(transporte, distancia)
+                custo_total += distancia
+                tempo_viagem = distancia / transporte.velocidade
+                tempo_total += tempo_viagem
 
-        for transporte_nome, caminho, custo, tempo in resultados:
-            print(f"\n--- Resultados para {transporte_nome} ---")
-            print(f"Caminho: {caminho}")
-            print(f"Custo Total: {custo}")
-            print(f"Tempo Total: {tempo:.2f} horas")
+            for nodo in caminho_otimo:
+                if not caminho_total or caminho_total[-1] != nodo:
+                    caminho_total.append(nodo)
+
+            if ponto_objetivo in self.m_nodos and self.m_nodos[ponto_objetivo]["alimentos"] > 0:
+                tr.Transporte.descarregar(transporte, self.m_nodos[ponto_objetivo]["alimentos"])
+                custo_total += 15
+                tempo_total += 0.5
+                self.m_nodos[ponto_objetivo]["alimentos"] = 0
+                self.m_nodos[ponto_objetivo]["prioridade"] = 0
+
+            if self.m_nodos[ponto_objetivo]["supply_refill"] == True:
+                tr.Transporte.carregar(transporte)
+
+            i += 1
+
+        tempo_total = (tempo_total * 60) / 100
+        print(f"Caminho total percorrido: {caminho_total}")
+        print(f"Custo total acumulado: {custo_total:.3f}")
+        print(f"Tempo total acumulado: {tempo_total:.2f} horas")
+        return caminho_total, round(custo_total, 3), tempo_total
             
     def procura_greedy(self, inicio, transporte):
         if inicio not in self.m_nodos:
