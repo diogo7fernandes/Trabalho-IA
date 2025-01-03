@@ -133,7 +133,6 @@ class Grafo:
         lat2, lon2 = coordenadas_destino
 
         distancia = Grafo.calcular_distancia(lat1, lon1, lat2, lon2)
-        print(f"A distância entre {origem} e {destino} é aproximadamente {distancia:.2f} km.")
 
     def heuristica_grafo(self):
         if not self.m_nodos:
@@ -454,13 +453,11 @@ class Grafo:
         """
         # Basic input validation
         if not objetivos:
-            print("Lista de objetivos está vazia")
             return [], 0, 0
             
         # Filter for locations that need deliveries
         locais_entrega = [obj for obj in objetivos if self.m_nodos[obj]["alimentos"] > 0]
         if not locais_entrega:
-            print("Não há locais que necessitem de entrega")
             return [], 0, 0
 
         # Validate starting point
@@ -478,8 +475,6 @@ class Grafo:
 
         # Check initial vehicle capacity
         maior_carga = max(self.m_nodos[obj]["alimentos"] for obj in locais_entrega)
-        if maior_carga > transporte.capacidade:
-            print(f"Aviso: Alguns destinos requerem {maior_carga}kg, mas {transporte.nome} só suporta {transporte.capacidade}kg")
 
         # Initialize variables
         caminho_total = []
@@ -494,11 +489,9 @@ class Grafo:
             # Verify if path is possible considering vehicle limitations
             viavel, motivo = self.verificar_viabilidade_transporte(transporte, ponto_atual, objetivo)
             if not viavel:
-                print(f"Destino {objetivo} não é viável: {motivo}")
                 continue
 
             if not self.verificar_caminho_possivel(ponto_atual, objetivo, transporte):
-                print(f"Não existe caminho possível entre {ponto_atual} e {objetivo}")
                 continue
 
             fila = [(ponto_atual, [ponto_atual])]
@@ -523,7 +516,6 @@ class Grafo:
                             
                             if not seguro or tempo_viagem == float('inf'):
                                 rota_possivel = False
-                                print(f"Condições climáticas impedem viagem de {atual_nodo} para {proximo_nodo}")
                                 break
 
                         if rota_possivel:
@@ -544,7 +536,6 @@ class Grafo:
                                         tempo_total += 0.1  # 6 minutes for refueling
                                         custo_total += 10   # Refueling cost
                                     else:
-                                        print(f"Sem ponto de reabastecimento em {atual_nodo}")
                                         rota_possivel = False
                                         break
 
@@ -569,7 +560,6 @@ class Grafo:
                                         self.m_nodos[objetivo]["alimentos"] = 0
                                         self.m_nodos[objetivo]["prioridade"] = 0
                                     else:
-                                        print(f"Capacidade insuficiente para entrega em {objetivo}")
                                         continue
 
                                 # Resupply if available
@@ -610,9 +600,6 @@ class Grafo:
                                 tempos[vizinho] = tempo_estimado
                                 fila.append((vizinho, novo_caminho))
 
-            if not caminho_encontrado:
-                print(f"Não foi possível encontrar um caminho seguro para {objetivo}")
-
         # Return results
         if tempo_total > 0:
             tempo_total = (tempo_total * 60) / 100  # Convert to hours
@@ -630,13 +617,11 @@ class Grafo:
         """
         # Basic input validation
         if not objetivos:
-            print("Lista de objetivos está vazia")
             return [], 0, 0
             
         # Filter for locations that need deliveries
         locais_entrega = [obj for obj in objetivos if self.m_nodos[obj]["alimentos"] > 0]
         if not locais_entrega:
-            print("Não há locais que necessitem de entrega")
             return [], 0, 0
 
         # Validate starting point
@@ -654,8 +639,6 @@ class Grafo:
 
         # Check initial vehicle capacity
         maior_carga = max(self.m_nodos[obj]["alimentos"] for obj in locais_entrega)
-        if maior_carga > transporte.capacidade:
-            print(f"Aviso: Alguns destinos requerem {maior_carga}kg, mas {transporte.nome} só suporta {transporte.capacidade}kg")
 
         # Initialize variables
         caminho_total = []
@@ -670,11 +653,9 @@ class Grafo:
             # Verify if path is possible considering vehicle limitations
             viavel, motivo = self.verificar_viabilidade_transporte(transporte, ponto_atual, objetivo)
             if not viavel:
-                print(f"Destino {objetivo} não é viável: {motivo}")
                 continue
 
             if not self.verificar_caminho_possivel(ponto_atual, objetivo, transporte):
-                print(f"Não existe caminho possível entre {ponto_atual} e {objetivo}")
                 continue
 
             pilha = [(ponto_atual, [ponto_atual])]
@@ -699,7 +680,6 @@ class Grafo:
                             
                             if not seguro or tempo_viagem == float('inf'):
                                 rota_possivel = False
-                                print(f"Condições climáticas impedem viagem de {atual_nodo} para {proximo_nodo}")
                                 break
 
                         if rota_possivel:
@@ -720,7 +700,6 @@ class Grafo:
                                         tempo_total += 0.1  # 6 minutes for refueling
                                         custo_total += 10   # Refueling cost
                                     else:
-                                        print(f"Sem ponto de reabastecimento em {atual_nodo}")
                                         rota_possivel = False
                                         break
 
@@ -746,7 +725,6 @@ class Grafo:
                                         self.m_nodos[objetivo]["alimentos"] = 0
                                         self.m_nodos[objetivo]["prioridade"] = 0
                                     else:
-                                        print(f"Capacidade insuficiente para entrega em {objetivo}")
                                         continue
 
                                 # Resupply if available
@@ -785,9 +763,6 @@ class Grafo:
                             if self.verificar_caminho_possivel(atual, vizinho, transporte):
                                 pilha.append((vizinho, novo_caminho))
 
-            if not caminho_encontrado:
-                print(f"Não foi possível encontrar um caminho seguro para {objetivo} após {tentativas_alternativas - tentativas} tentativas")
-
         # Return results
         if tempo_total > 0:
             tempo_total = (tempo_total * 60) / 100  # Convert to hours
@@ -805,13 +780,11 @@ class Grafo:
         """
         # Basic input validation
         if not objetivos:
-            print("Lista de objetivos está vazia")
             return [], 0, 0
             
         # Filter for locations that need deliveries
         locais_entrega = [obj for obj in objetivos if self.m_nodos[obj]["alimentos"] > 0]
         if not locais_entrega:
-            print("Não há locais que necessitem de entrega")
             return [], 0, 0
 
         # Validate starting point and objectives
@@ -827,8 +800,6 @@ class Grafo:
 
         # Check initial vehicle capacity
         maior_carga = max(self.m_nodos[obj]["alimentos"] for obj in locais_entrega)
-        if maior_carga > transporte.capacidade:
-            print(f"Aviso: Alguns destinos requerem {maior_carga}kg, mas {transporte.nome} só suporta {transporte.capacidade}kg")
 
         # Initialize variables
         caminho_total = []
@@ -843,11 +814,9 @@ class Grafo:
             # Verify if path is possible considering vehicle limitations
             viavel, motivo = self.verificar_viabilidade_transporte(transporte, ponto_atual, objetivo)
             if not viavel:
-                print(f"Destino {objetivo} não é viável: {motivo}")
                 continue
 
             if not self.verificar_caminho_possivel(ponto_atual, objetivo, transporte):
-                print(f"Não existe caminho possível entre {ponto_atual} e {objetivo}")
                 continue
 
             # A* specific initialization
@@ -880,7 +849,6 @@ class Grafo:
                                 
                                 if not seguro or tempo_viagem == float('inf'):
                                     rota_possivel = False
-                                    print(f"Condições climáticas impedem viagem de {atual_nodo} para {proximo_nodo}")
                                     break
 
                             if rota_possivel:
@@ -901,7 +869,6 @@ class Grafo:
                                             tempo_total += 0.1  # 6 minutes for refueling
                                             custo_total += 10   # Refueling cost
                                         else:
-                                            print(f"Sem ponto de reabastecimento em {atual_nodo}")
                                             rota_possivel = False
                                             break
 
@@ -926,7 +893,6 @@ class Grafo:
                                             self.m_nodos[objetivo]["alimentos"] = 0
                                             self.m_nodos[objetivo]["prioridade"] = 0
                                         else:
-                                            print(f"Capacidade insuficiente para entrega em {objetivo}")
                                             continue
 
                                     # Resupply if available
@@ -977,8 +943,6 @@ class Grafo:
                                     f = novo_g + h
                                     heapq.heappush(fila_prioridade, (f, novo_g, vizinho, novo_caminho))
 
-                if iteration_count >= max_iterations:
-                    print(f"Limite de iterações atingido para o objetivo {objetivo}")
 
         # Return results
         if tempo_total > 0:
@@ -997,13 +961,11 @@ class Grafo:
         """
         # Basic input validation
         if not objetivos:
-            print("Lista de objetivos está vazia")
             return [], 0, 0
             
         # Filter for locations that need deliveries
         locais_entrega = [obj for obj in objetivos if self.m_nodos[obj]["alimentos"] > 0]
         if not locais_entrega:
-            print("Não há locais que necessitem de entrega")
             return [], 0, 0
 
         # Validate starting point and objectives
@@ -1019,8 +981,6 @@ class Grafo:
 
         # Check initial vehicle capacity against requirements
         maior_carga = max(self.m_nodos[obj]["alimentos"] for obj in locais_entrega)
-        if maior_carga > transporte.capacidade:
-            print(f"Aviso: Alguns destinos requerem {maior_carga}kg, mas {transporte.nome} só suporta {transporte.capacidade}kg")
 
         # Initialize variables
         caminho_total = []
@@ -1035,11 +995,9 @@ class Grafo:
             # Check viability for current destination
             viavel, motivo = self.verificar_viabilidade_transporte(transporte, ponto_atual, objetivo)
             if not viavel:
-                print(f"Destino {objetivo} não é viável: {motivo}")
                 continue
 
             if not self.verificar_caminho_possivel(ponto_atual, objetivo, transporte):
-                print(f"Não existe caminho possível entre {ponto_atual} e {objetivo}")
                 continue
 
             # Greedy search initialization
@@ -1073,7 +1031,6 @@ class Grafo:
                                 
                                 if not seguro or tempo_viagem == float('inf'):
                                     rota_possivel = False
-                                    print(f"Condições climáticas impedem viagem de {atual_nodo} para {proximo_nodo}")
                                     break
 
                             if rota_possivel:
@@ -1094,7 +1051,6 @@ class Grafo:
                                             tempo_total += 0.1  # 6 minutes for refueling
                                             custo_total += 10   # Refueling cost
                                         else:
-                                            print(f"Sem ponto de reabastecimento em {atual_nodo}")
                                             rota_possivel = False
                                             break
 
@@ -1120,7 +1076,6 @@ class Grafo:
                                             self.m_nodos[objetivo]["alimentos"] = 0
                                             self.m_nodos[objetivo]["prioridade"] = 0
                                         else:
-                                            print(f"Capacidade insuficiente para entrega em {objetivo}")
                                             continue
 
                                     # Resupply if available
@@ -1163,9 +1118,6 @@ class Grafo:
                                     tempos[vizinho] = tempo_estimado
                                     heapq.heappush(fila_prioridade, (h, vizinho, novo_caminho))
 
-                if iteration_count >= max_iterations:
-                    print(f"Limite de iterações atingido para o objetivo {objetivo}")
-
         # Return results
         if tempo_total > 0:
             tempo_total = (tempo_total * 60) / 100  # Convert to hours
@@ -1183,13 +1135,11 @@ class Grafo:
         """
         # Basic input validation
         if not objetivos:
-            print("Lista de objetivos está vazia")
             return [], 0, 0
             
         # Filter for locations that need deliveries
         locais_entrega = [obj for obj in objetivos if self.m_nodos[obj]["alimentos"] > 0]
         if not locais_entrega:
-            print("Não há locais que necessitem de entrega")
             return [], 0, 0
 
         # Validate starting point
@@ -1207,8 +1157,6 @@ class Grafo:
 
         # Check initial vehicle capacity
         maior_carga = max(self.m_nodos[obj]["alimentos"] for obj in locais_entrega)
-        if maior_carga > transporte.capacidade:
-            print(f"Aviso: Alguns destinos requerem {maior_carga}kg, mas {transporte.nome} só suporta {transporte.capacidade}kg")
 
         # Initialize variables
         caminho_total = []
@@ -1226,17 +1174,14 @@ class Grafo:
             # Verify if path is possible
             viavel, motivo = self.verificar_viabilidade_transporte(transporte, ponto_atual, objetivo_atual)
             if not viavel:
-                print(f"Destino {objetivo_atual} não é viável: {motivo}")
                 objetivos_restantes.pop(0)
                 continue
 
             if not self.verificar_caminho_possivel(ponto_atual, objetivo_atual, transporte):
-                print(f"Não existe caminho possível entre {ponto_atual} e {objetivo_atual}")
                 objetivos_restantes.pop(0)
                 continue
 
             if not transporte.transporte_pode(self.m_nodos[objetivo_atual]["acessibilidade"]):
-                print(f"Transporte {transporte.nome} não pode acessar {objetivo_atual}")
                 objetivos_restantes.pop(0)
                 continue
 
@@ -1270,7 +1215,6 @@ class Grafo:
                                 
                                 if not seguro or tempo_viagem == float('inf'):
                                     rota_possivel = False
-                                    print(f"Condições climáticas impedem viagem de {atual_nodo} para {proximo_nodo}")
                                     break
 
                             if rota_possivel:
@@ -1291,7 +1235,6 @@ class Grafo:
                                             tempo_total += 0.1  # 6 minutes for refueling
                                             custo_total += 10   # Refueling cost
                                         else:
-                                            print(f"Sem ponto de reabastecimento em {atual_nodo}")
                                             rota_possivel = False
                                             break
 
@@ -1316,7 +1259,6 @@ class Grafo:
                                             self.m_nodos[objetivo_atual]["alimentos"] = 0
                                             self.m_nodos[objetivo_atual]["prioridade"] = 0
                                         else:
-                                            print(f"Capacidade insuficiente para entrega em {objetivo_atual}")
                                             continue
 
                                     # Resupply if available
@@ -1363,11 +1305,9 @@ class Grafo:
                                         heapq.heappush(fila_prioridade, (novo_custo, vizinho, novo_caminho))
 
                 if iteration_count >= max_iterations:
-                    print(f"Limite de iterações atingido para o objetivo {objetivo_atual}")
                     break
 
             if not caminho_encontrado:
-                print(f"Não foi possível encontrar um caminho seguro para {objetivo_atual} após {tentativas} tentativas")
                 objetivos_restantes.pop(0)
 
         # Return results

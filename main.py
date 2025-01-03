@@ -56,7 +56,6 @@ def main():
             if atributos.get("alimentos", 0) > 0  # Use get() to handle missing keys
         ]
         if not prioridades:
-            print("Aviso: Não há locais que necessitem de entrega")
             return []
         prioridades_ordenadas = sorted(prioridades, key=lambda x: x[1], reverse=True)
         return [nodo for nodo, _ in prioridades_ordenadas]
@@ -225,29 +224,24 @@ def main():
         elif saida == 6:
             inicio = "Centro"
             transportes = [Carro(), Mota(), Helicoptero(), Drone()]
-            try:
-                for transporte in transportes:
-                    try:
-                        caminho, custo_total, tempo_total = gg.a_star(inicio, transporte, lista_prioridades)
-                        guardar_resultados(f"A*_{transporte.nome}", caminho, custo_total, tempo_total)
-                        print(f"[A* - {transporte.nome}]")
-                        print(f"Caminho encontrado: {caminho}")
-                        print(f"Custo total: {custo_total}")
-                        print(f"Tempo total: {tempo_total:.2f} horas")
-                    except ValueError as e:
-                        print(f"Erro com o transporte {transporte.nome}: {e}")
-                    except Exception as ex:
-                        print(f"Ocorreu um erro inesperado com o transporte {transporte.nome}: {ex}")
-            except ValueError as e:
-                print(e)
+            for transporte in transportes:
+                try:
+                    caminho, custo_total, tempo_total = gg.a_star(inicio, transporte, lista_prioridades)
+                    guardar_resultados(f"A*_{transporte.nome}", caminho, custo_total, tempo_total)
+                    print(f"[A* - {transporte.nome}]")
+                    print(f"Caminho encontrado: {caminho}")
+                    print(f"Custo total: {custo_total}")
+                    print(f"Tempo total: {tempo_total:.2f} horas")
+                except ValueError as e:
+                    print(e)
             input("Pressione Enter para continuar...")
         elif saida == 7:
             inicio = "Centro"
             transportes = [Carro(), Mota(), Helicoptero(), Drone()]
             for transporte in transportes:
                 try:
-                    print(f"Executando Custo Uniforme para o transporte '{transporte.nome}'...")
                     caminho, custo_total, tempo_total = gg.custo_uniforme(inicio, transporte, lista_prioridades)
+                    print(f"[Custo Uniforme - {transporte.nome}]")
                     print(f"Caminho: {caminho}")
                     print(f"Custo Total: {custo_total}")
                     print(f"Tempo Total: {tempo_total:.2f} horas")
@@ -260,7 +254,6 @@ def main():
             transportes = [Carro(), Mota(), Helicoptero(), Drone()]
             for transporte in transportes:
                 try:
-                    print(f"Executando Greedy para o transporte '{transporte.nome}'...")
                     caminho, custo_total, tempo_total = gg.procura_greedy(inicio, transporte, lista_prioridades)
                     print(f"[Greedy - {transporte.nome}]")
                     print(f"Caminho encontrado: {caminho}")
