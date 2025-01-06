@@ -7,7 +7,10 @@ class Transporte:
         self.velocidade = velocidade
         self.autonomia = autonomia
         self.deposito = deposito
-        
+    
+    def get_capacidade (self):
+        return self.capacidade
+
     def __str__(self):
         return f"{self.nome} (Capacidade: {self.capacidade} kg, Velocidade: {self.velocidade} km/h, Autonomia: {self.autonomia} km)"
     
@@ -86,3 +89,4 @@ class Drone(Transporte):
             autonomia = 50,
             deposito = 50
         )
+

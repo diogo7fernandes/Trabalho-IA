@@ -9,7 +9,7 @@ import platform
 import heapq
 import networkx as nx
 import matplotlib.pyplot as plt
-
+import  transporte as tr
 class Grafo:
     
     def __init__(self, direcionado=True):
@@ -418,7 +418,7 @@ class Grafo:
         """
         # Verificar capacidade de carga
         alimentos_necessarios = self.m_nodos[objetivo].get("alimentos", 0)
-        if alimentos_necessarios > transporte.capacidade:
+        if alimentos_necessarios > tr.Transporte.get_capacidade(transporte):
             return False, f"Capacidade insuficiente: necessário {alimentos_necessarios}kg, capacidade {transporte.capacidade}kg"
 
         # Verificar distância vs autonomia
